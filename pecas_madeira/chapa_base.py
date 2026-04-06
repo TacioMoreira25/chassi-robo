@@ -1,46 +1,61 @@
-# chapa_base.py
 from build123d import *
 import config
 
-def criar_chapa_base():
-    with BuildPart() as chapa:
-        # 1. Contorno principal (No plano XY global)
+def _gerar_perfil_base()-> Part:
+    """ Extrusão do perfil 2D base (assoalho) """
+    with BuildPart() as base:
         with BuildSketch(Plane.XY):
-            # A parte estreita (Vão dianteiro) vai de X=0 até X=76.2
-            # Esta é a 'língua' que você cortou
             with Locations((config.COMP_BAY / 2, 0)):
                 Rectangle(config.COMP_BAY, config.LARG_LINGUA)
-            
-            # A parte larga vai de X=76.2 até X=406.4
             with Locations((config.COMP_BAY + (config.COMP_CORPO / 2), 0)):
                 Rectangle(config.COMP_CORPO, config.LARG_EXTERNA)
-                
         extrude(amount=config.ESPESSURA_PISO)
+    return base.part
 
-        # 2. Furações para o tensionador dianteiro (Validadas "mais pra baixo")
-        # Mantemos as medidas que você validou. Elas desceram (eixo X) 
-        # para o meio do vão de 3 polegadas.
-        dist_frente_1 = 38.1  # 1.5 polegadas da borda frontal (X=0)
-        dist_frente_2 = 63.5  # 2.5 polegadas da borda frontal (X=0)
-        
-        # Recuo lateral (eixo Y) de 0.5 polegadas das bordas estreitas
-        dist_lateral = 12.7
-        pos_y_furos = (config.LARG_LINGUA / 2) - dist_lateral
-
-        # Desenhando os furos passantes no plano XY global
+def _aplicar_furos_tensionador(part: Part) -> Part:
+    """ Furações frontais de fixação do tensionador """
+    dist_frontais = [config.DIST_FRONTAIS_TENSIONADOR_1, config.DIST_FRONTAIS_TENSIONADOR_2]
+    pos_y_furos = (config.LARG_LINGUA / 2) - config.RECUO_Y_TENSIONADOR
+    
+    with BuildPart() as subtraida:
+        add(part)
         with BuildSketch(Plane.XY):
             with Locations(
-                (dist_frente_1, pos_y_furos), 
-                (dist_frente_2, pos_y_furos),
-                (dist_frente_1, -pos_y_furos), 
-                (dist_frente_2, -pos_y_furos)
+                [(x, y) for x in dist_frontais for y in (pos_y_furos, -pos_y_furos)]
             ):
-                Circle(radius=2.5) # Furos de 5mm
-
-        # Corte passante (nos dois sentidos para ter certeza)
+                Circle(radius=config.RAIO_FURO_M4)
         extrude(amount=config.ESPESSURA_PISO * 2, both=True, mode=Mode.SUBTRACT)
-        
-    return chapa.part
+    return subtraida.part
+
+def _aplicar_furos_paredes(part: Part) -> Part:
+    """ Escareamentos de fixação vertical das paredes de madeira """
+    y_ext = config.LARG_EXTERNA / 2 - config.ESPESSURA_PAREDE / 2
+    y_ling= config.LARG_LINGUA / 2 - config.ESPESSURA_PAREDE / 2
+    
+    x_pos = [
+        config.ESPESSURA_PAREDE / 2,                       # Frente Extrema
+        config.COMP_BAY + config.ESPESSURA_PAREDE / 2,     # Frente Caixa
+        config.COMP_BAY + (config.COMP_CORPO / 2),         # Divisória
+        config.COMP_TOTAL - config.ESPESSURA_PAREDE / 2    # Atrás
+    ]
+    
+    with BuildPart() as montada:
+        add(part)
+        with BuildSketch(Plane.XY):
+            with Locations(
+                [(x_pos[0], y) for y in (y_ling, -y_ling)],                # Ponta menor
+                [(x, y) for x in x_pos[1:] for y in (y_ext, -y_ext)]       # Caixa larga
+            ):
+                Circle(radius=config.RAIO_FURO_BASE)
+        extrude(amount=config.ESPESSURA_PISO * 2, both=True, mode=Mode.SUBTRACT)
+    return montada.part
+
+def criar_chapa_base():
+    """ Orquestra a montagem geométrica e furos da chapa base """
+    chapa = _gerar_perfil_base()
+    chapa = _aplicar_furos_tensionador(chapa)
+    chapa = _aplicar_furos_paredes(chapa)
+    return chapa
 
 if __name__ == "__main__":
     from ocp_vscode import show

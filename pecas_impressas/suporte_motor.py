@@ -1,56 +1,81 @@
 from build123d import *
+import config
 
 def criar_suporte_motor():
-    # Motor 33GB-520
-    diam_motor = 33.0 
-    pcd_motor = 26.0 
-    comp_motor_body = 39.0 
+    """Gera o corpo do suporte de motor (Peça de Impressão 3D)."""
     
-    # Bloco Plástico (Dimensionado com base nas fotos)
-    comp_bloco = 55.0  # Eixo X
-    larg_bloco = 35.0  # Eixo Y (Espessura do bloco)
-    alt_bloco = 55.0   # Eixo Z
+    comp_x = config.COMP_SUPORTE_X 
+    alt_z = config.ALT_PAREDE
+    prof_y = config.PROF_SUPORTE_MOTOR
+    raio_passante = config.RAIO_FURO_M4 + config.FOLGA_FURO_M4
 
-    with BuildPart() as suporte:
-        Box(comp_bloco, larg_bloco, alt_bloco)
+    with BuildPart() as suporte_base:
+        # Base sólida
+        Box(comp_x, prof_y, alt_z)
         
-        # Furo do motor
-        with BuildSketch(Plane.YZ):
-            Circle(radius=(diam_motor + 0.5) / 2)
-        extrude(amount=comp_bloco, both=True, mode=Mode.SUBTRACT)
+        # Furo central livre do motor
+        with BuildSketch(Plane.XZ):
+            Circle(radius=config.DIAM_MOTOR / 2)
+        extrude(amount=prof_y, both=True, mode=Mode.SUBTRACT)
         
-        # Furos frontais para fixar o motor (com escareado)
-        face_frontal = suporte.faces().sort_by(Axis.X)[-1]
-        with BuildSketch(face_frontal):
-            with Locations((pcd_motor/2, pcd_motor/2), (pcd_motor/2, -pcd_motor/2),
-                           (-pcd_motor/2, pcd_motor/2), (-pcd_motor/2, -pcd_motor/2)):
-                Circle(radius=1.6) # Passante M3
-        extrude(amount=-comp_bloco, mode=Mode.SUBTRACT)
+        furos_motor_locs = [
+            (config.DIST_X_FUROS_MOTOR, config.DIST_Z_FUROS_MOTOR), 
+            (config.DIST_X_FUROS_MOTOR, -config.DIST_Z_FUROS_MOTOR),
+            (-config.DIST_X_FUROS_MOTOR, config.DIST_Z_FUROS_MOTOR), 
+            (-config.DIST_X_FUROS_MOTOR, -config.DIST_Z_FUROS_MOTOR)
+        ]
         
-        with BuildSketch(face_frontal):
-            with Locations((pcd_motor/2, pcd_motor/2), (pcd_motor/2, -pcd_motor/2),
-                           (-pcd_motor/2, pcd_motor/2), (-pcd_motor/2, -pcd_motor/2)):
-                Circle(radius=3.0) # Escareado
-        extrude(amount=-10.0, mode=Mode.SUBTRACT)
+        # Escareamentos para cabeças dos parafusos
+        with BuildSketch(Plane.XZ.offset(-prof_y / 2)):
+            with Locations(furos_motor_locs):
+                Circle(radius=config.RAIO_REBAIXO_M4)
+        extrude(amount=config.PROF_REBAIXO_M4, mode=Mode.SUBTRACT)
 
-        # Furos laterais para insertos M4 (Fixam na parede do chassi)
-        face_lateral = suporte.faces().sort_by(Axis.Y)[-1]
-        with BuildSketch(face_lateral):
-            with Locations((15, 15), (-15, 15), (15, -15), (-15, -15)): 
-                Circle(radius=2.3) # Furo para inserto M4
-        extrude(amount=-15.0, mode=Mode.SUBTRACT)
+        # Furos passantes de fixação do motor
+        with BuildSketch(Plane.XZ):
+            with Locations(furos_motor_locs):
+                Circle(radius=raio_passante)
+        extrude(amount=prof_y, both=True, mode=Mode.SUBTRACT)
 
-    # Mockup cilíndrico
-    with BuildPart() as motor_mockup:
-        with BuildSketch(Plane.YZ):
-            Circle(radius=diam_motor / 2)
-        extrude(amount=comp_motor_body)
-        with BuildSketch(Plane.YZ.offset(comp_motor_body)):
-            Circle(radius=10.0)
-            Circle(radius=2.5) # Eixo
-        extrude(amount=9.0)
+    # Posicionamento (Instâncias simétricas)
+    pos_motor_x_real = config.POS_X_MOTOR_REAL 
+    centro_z_real = config.ESPESSURA_PISO + (alt_z / 2)
+    y_centro_peca = (config.LARG_LINGUA / 2) - config.RECUO_Y_MOTOR
+    
+    with BuildPart() as montagem:
+        # Lado Direito
+        with Locations((pos_motor_x_real, -y_centro_peca, centro_z_real)):
+            add(suporte_base.part)
+            
+        # Lado Esquerdo
+        with Locations((pos_motor_x_real, y_centro_peca, centro_z_real)):
+            add(suporte_base.part, rotation=(0, 0, 180))
+            
+        # Subtrações de montagem no chassi
+        margem_z = (alt_z / 2) - config.MARGEM_FURACOES_QUINA
+        locs_y_base = ((config.LARG_LINGUA / 2) - config.RECUO_Y_TENSIONADOR, -((config.LARG_LINGUA / 2) - config.RECUO_Y_TENSIONADOR))
+        locs_y_paredes = ((config.LARG_LINGUA / 2) - config.MARGEM_FURACOES_QUINA, -((config.LARG_LINGUA / 2) - config.MARGEM_FURACOES_QUINA))
+        
+        # Furos passantes no Assoalho
+        with BuildSketch(Plane.XY.offset(config.ESPESSURA_PISO)):
+            with Locations([(x, y) for x in (config.DIST_FRONTAIS_TENSIONADOR_1, config.DIST_FRONTAIS_TENSIONADOR_2) for y in locs_y_base]):
+                Circle(radius=raio_passante)
+        extrude(amount=config.CORTES_MONTAGEM_MOTOR, mode=Mode.SUBTRACT)
+        
+        # Furos passantes nas Paredes Frontais e Extremidades
+        with BuildSketch(Plane.YZ.offset(config.ESPESSURA_PAREDE)):
+            with Locations([(y, centro_z_real + z) for y in locs_y_paredes for z in (margem_z, -margem_z)]):
+                Circle(radius=raio_passante)
+        extrude(amount=config.CORTES_MONTAGEM_MOTOR, mode=Mode.SUBTRACT)
 
-    return {
-        "suporte": suporte.part,
-        "motor": motor_mockup.part
-    }
+        with BuildSketch(Plane.YZ.offset(config.COMP_BAY)):
+            with Locations([(y, centro_z_real + z) for y in locs_y_paredes for z in (margem_z, -margem_z)]):
+                Circle(radius=raio_passante)
+        extrude(amount=-config.CORTES_MONTAGEM_MOTOR, mode=Mode.SUBTRACT)
+            
+    return montagem.part
+
+if __name__ == "__main__":
+    from ocp_vscode import show
+    peca = criar_suporte_motor()
+    show(peca, names=["Suporte Impresso (Motor)"], colors=["#e63946"])
