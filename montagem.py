@@ -1,43 +1,108 @@
 from build123d import *
+import math
+import config as cfg
+import medidas as med
+
 from pecas_madeira import chapa_base, paredes
-from pecas_impressas import suporte_motor
-from pecas_mecanicas import motor_rs555
-import config
-import medidas
-import os
+from pecas_mecanicas import motor_johnson, catraca_18t, eixos
 
-def montar_chassi():
-    """ Agrega e retorna as sub-montagens do chassi completo """
-    assoalho = chapa_base.criar_chapa_base()
-    paredes_laterais = paredes.criar_paredes()
-    suporte = suporte_motor.criar_suporte_motor()
+def montar_chassi() -> Compound:
+    """
+    Realiza a montagem global do Creative Home Tank perfeitamente alinhada.
+    """
+    # --- CHAPAS DE MADEIRA ---
+    base = chapa_base.criar_chapa_base()
+    parede_conj = paredes.criar_paredes()
     
-    # Adicionando visualização dos motores
-    try:
-        motor_model = motor_rs555.criar_motor()
+    # As paredes pequenas (front/rear plates verticais no fundo)
+    parede_pequena = chapa_base.criar_parede_pequena()
+    # Altura é 40mm. O centro em Z deve ser base_espessura + altura/2 = 12 + 20 = 32
+    # Parede traseira (X = 6)
+    p_tras = parede_pequena.moved(Location((cfg.CONFIG["ESPESSURA_MADEIRA"] / 2, 0, cfg.CONFIG["ESPESSURA_MADEIRA"] + 20.0)))
+    # Parede frontal (X = 394)
+    p_frente = parede_pequena.moved(Location((cfg.CONFIG["COMP_TOTAL"] - cfg.CONFIG["ESPESSURA_MADEIRA"] / 2, 0, cfg.CONFIG["ESPESSURA_MADEIRA"] + 20.0)))
+    
+    # --- CATRACAS ---
+    catraca_modelo = catraca_18t.criar_catraca_com_bucha()
+    # A catraca livre fica "de costas", com a bucha (em +Z no modelo) voltada para a madeira.
+    # Parede Direita (-Y): Queremos que o +Z da catraca aponte para +Y (Inwards). Rotation(-90,0,0) faz isso.
+    catraca_girada_dir = catraca_modelo.moved(Rotation(-90, 0, 0))
+    # Parede Esquerda (+Y): Queremos que o +Z da catraca aponte para -Y (Inwards). Rotation(90,0,0) faz isso.
+    catraca_girada_esq = catraca_modelo.moved(Rotation(90, 0, 0))
+    
+    y_parede_dir = -cfg.CONFIG["LARG_EXTERNA"] / 2
+    y_parede_esq = cfg.CONFIG["LARG_EXTERNA"] / 2
+    
+    catracas_lista = []
+    
+    for (x_centro, z_centro) in med.FUROS_RODAS:
+        y_pos_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA / 2
+        c_dir = catraca_girada_dir.moved(Location((x_centro, y_pos_dir, z_centro)))
         
-        pos_motor_x_real = medidas.POS_X_MOTOR_REAL 
-        centro_z_real = config.ESPESSURA_PISO + (config.ALT_PAREDE / 2)
-        y_centro_peca = (medidas.LARG_LINGUA / 2) - medidas.RECUO_Y_MOTOR
+        y_pos_esq = y_parede_esq + med.DIST_CATRACA_PAREDE + med.ESPESSURA_CATRACA / 2
+        c_esq = catraca_girada_esq.moved(Location((x_centro, y_pos_esq, z_centro)))
+        
+        catracas_lista.extend([c_dir, c_esq])
+        
+    conjunto_catracas = Compound(label="Catracas 18T (x8)", children=catracas_lista)
+    
+    # --- MOTORES JOHNSON ---
+    motor_modelo = motor_johnson.criar_motor_johnson()
+    # O motor fica do lado de dentro.
+    # Lado Direito (-Y): Corpo(-Z) aponta para dentro (+Y). Eixo(+Z) aponta para fora (-Y). -> Rotation(90, 0, 0)
+    motor_dir = motor_modelo.moved(Rotation(90, 0, 0)) 
+    # Lado Esquerdo (+Y): Corpo(-Z) aponta para dentro (-Y). Eixo(+Z) aponta para fora (+Y). -> Rotation(-90, 0, 0)
+    motor_esq = motor_modelo.moved(Rotation(-90, 0, 0))
+    
+    y_int_dir = -cfg.CONFIG["LARG_INTERNA"] / 2
+    y_int_esq = cfg.CONFIG["LARG_INTERNA"] / 2
+    
+    x_motriz = med.FUROS_RODAS[0][0]
+    z_motriz = med.FUROS_RODAS[0][1]
+    
+    m_dir = motor_dir.moved(Location((x_motriz, y_int_dir, z_motriz)))
+    m_esq = motor_esq.moved(Location((x_motriz, y_int_esq, z_motriz)))
+    conjunto_motores = Compound(label="Motores Johnson (x2)", children=[m_esq, m_dir])
+    
+    # --- EIXOS E PORCAS (M8x75mm independentes) ---
+    eixo_modelo = eixos.criar_eixo_m8()
+    porca_modelo = eixos.criar_arruela_e_porca()
+    
+    # O eixo entra de fora para dentro. 
+    # Lado Direito (-Y): Cabeça na catraca, corpo (+Z) entra para +Y. -> Rotation(-90, 0, 0)
+    eixo_dir = eixo_modelo.moved(Rotation(-90, 0, 0))
+    # A porca fica do lado de dentro (-Y) e face (+Z) aponta para +Y -> Rotation(-90, 0, 0)
+    porca_dir = porca_modelo.moved(Rotation(-90, 0, 0))
+    
+    # Lado Esquerdo (+Y): Cabeça na catraca, corpo (+Z) entra para -Y. -> Rotation(90, 0, 0)
+    eixo_esq = eixo_modelo.moved(Rotation(90, 0, 0))
+    # Porca fica do lado de dentro (+Y) e face (+Z) aponta para -Y -> Rotation(90, 0, 0)
+    porca_esq = porca_modelo.moved(Rotation(90, 0, 0))
+    
+    eixos_lista = []
+    # Eixos nas 3 rodas livres (índices 1, 2, 3)
+    for (x_centro, z_centro) in med.FUROS_RODAS[1:]:
+        # O parafuso M8 encosta a cabeça do lado de fora da catraca
+        y_cabeca_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA
+        e_d = eixo_dir.moved(Location((x_centro, y_cabeca_dir, z_centro)))
+        p_d = porca_dir.moved(Location((x_centro, y_int_dir, z_centro)))
+        
+        y_cabeca_esq = y_parede_esq + med.DIST_CATRACA_PAREDE + med.ESPESSURA_CATRACA
+        e_e = eixo_esq.moved(Location((x_centro, y_cabeca_esq, z_centro)))
+        p_e = porca_esq.moved(Location((x_centro, y_int_esq, z_centro)))
+        
+        eixos_lista.extend([e_d, p_d, e_e, p_e])
+        
+    conjunto_eixos = Compound(label="Parafusos M8 e Porcas", children=eixos_lista)
 
-        # X=90 faz o eixo apontar pro eixo negativo Y (lado direito do robô, para fora da caixa)         
-        loc_direito = Location((pos_motor_x_real, -y_centro_peca, centro_z_real), (90, 0, 0))
-        motor_direito = motor_model.moved(loc_direito * Location((0, 0, -28.5))) # -57/2 = -28.5
-        
-        # X=-90 faz o eixo apontar pro eixo positivo Y (lado esquerdo do robô, para fora da caixa)
-        loc_esquerdo = Location((pos_motor_x_real, y_centro_peca, centro_z_real), (-90, 0, 0))
-        motor_esquerdo = motor_model.moved(loc_esquerdo * Location((0, 0, -28.5)))
-                
-        motores = Compound(label="Motores", children=[motor_direito, motor_esquerdo])
-    except Exception as e:
-        print(f"Erro ao carregar o motor dummy: {e}")
-        motores = Compound(label="Motor Dummy", children=[])
-    
-    chassi_global = Compound(label="Chassi Global", children=[
-        assoalho, 
-        paredes_laterais, 
-        suporte,
-        motores
+    chassi_global = Compound(label="Creative Home Tank", children=[
+        base, 
+        p_tras,
+        p_frente,
+        parede_conj, 
+        conjunto_catracas,
+        conjunto_motores,
+        conjunto_eixos
     ])
     
-    return assoalho, paredes_laterais, suporte, motores, chassi_global
+    return chassi_global

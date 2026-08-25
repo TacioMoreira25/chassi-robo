@@ -1,48 +1,49 @@
-import config
+"""
+Parâmetros dimensionais de ferragens e mecânica (Creative Home Tank).
+"""
 
-# Variáveis Derivadas
-LARG_LINGUA = config.LARG_EXTERNA - (2 * config.PROF_RECORTE)
-LARG_INTERNA = config.LARG_EXTERNA - (2 * config.ESPESSURA_PAREDE)
-COMP_CORPO = config.COMP_TOTAL - config.COMP_BAY # Comprimento de interseção piso/paredes
+# --- Eixos e Rolamentos ---
+RAIO_FURO_EIXO_M8 = 4.0
+DIAM_EIXO_M8 = 8.0
+OD_ROLAMENTO_608 = 22.0
+ID_ROLAMENTO_608 = 8.0
+ALTURA_ROLAMENTO_608 = 7.0
 
-# Acoplamentos e Furações Padronizadas (Radios em mm)
-RAIO_FURO_BASE = 1.5           # Fixação de chapas (M3/M4)
-RAIO_FURO_M4 = 2.0             # Suportes e tensionadores
-RAIO_PASSAGEM_CABO = 19.05     # Furo grande para chicotes
-MARGEM_FURACOES_QUINA = 7.5    # Recuo seguro (Metade da espessura)
+# --- Catracas de Bicicleta 18T ---
+DIAM_CATRACA = 76.0      # Diametro externo total aproximado
+ESPESSURA_CATRACA = 15.0 # Espessura 
+DIAM_FURO_CATRACA = 32.9 # Furo interno roscado
+DENTES_CATRACA = 18
 
-# Parâmetros do Motor e Suporte (Bloco Plástico 3D)
-RECUO_MOTOR = 50.0             # Distância do centro do motor até o centro da caixa (X)
-DIAM_MOTOR = 38.0              # Diâmetro do motor RS-555 + folga
-RAIO_EIXO_MOTOR = 6.0          # Furo da madeira para passagem do eixo do motor
-DIST_X_FUROS_MOTOR = 22.0      # Espaçamento X dos furos de fixação
-DIST_Z_FUROS_MOTOR = 26.0      # Espaçamento Z dos furos de fixação
-COMP_SUPORTE_MOTOR = 56.0      # Largura total cobrindo os furos com 8mm de margem
-ALT_SUPORTE_MOTOR = 66.0       # Altura total cobrindo os furos com 8mm de margem
-PROF_SUPORTE_MOTOR = 35.0      # Profundidade/Espessura do bloco plástico
-RAIO_REBAIXO_M4 = 4.5          # Rebaixo p/ esconder a cabeça do parafuso M4
-PROF_REBAIXO_M4 = 10.0         # Profundidade de mergulho da cabeça do parafuso
+# --- Bucha de Madeira (Adaptador Catraca -> Rolamento) ---
+OD_BUCHA = 33.0          # Ligeiramente maior para prensar na catraca (tolerancia de aperto na rosca)
+DIAM_REBAIXO_BUCHA = 22.0 # Para o rolamento 608zz
+PROF_REBAIXO_BUCHA = 7.0  # Altura do rolamento
+ESPESSURA_BUCHA = 15.0
 
-# Rodas / Oblongos
-RECUO_OVAL_RODA = 65.0
-LARG_OBLONGO_RODA = 95.0
-ALT_OBLONGO_RODA = 50.0
-SP_X_RODAS = 47.0
-SP_Z_RODAS = 28.5
+# --- Motores Johnson 100 RPM ---
+DIAM_MOTOR_JOHNSON = 37.0
+COMP_MOTOR_JOHNSON = 60.0 # Valor tipico
+DIAM_RESSALTO = 12.2
+ALTURA_RESSALTO = 4.0
+DIAM_EIXO_MOTOR = 6.0
+COMP_EIXO_MOTOR = 15.0
 
-# Alça de Transporte
-LARG_OVAL_ALCA = 95.0
-ALT_OVAL_ALCA = 36.0
+# --- Tensionador ---
+LARG_OBLONGO = 25.0
+ALT_OBLONGO = 8.5 # Para eixo M8 deslizar
 
-# Tensionador e Base
-DIST_FRONTAIS_TENSIONADOR_1 = 38.1
-DIST_FRONTAIS_TENSIONADOR_2 = 63.5
-RECUO_Y_TENSIONADOR = 12.7
-RAIO_FURO_M5 = 2.5
+# --- Coordenadas dos Furos (X, Z) das Rodas / Catracas ---
+# X medido da traseira para a frente (0 a 400).
+# Z medido da base plana para cima.
+# O robô é um trapézio: Base 400, Topo 240. 
+# As rodas inferiores ficam mais afastadas que as superiores.
+FUROS_RODAS = [
+    (90.0, 90.0),   # 0: Traseira Superior (Motriz - Motor)
+    (40.0, 30.0),   # 1: Traseira Inferior (Livre - Oblongo)
+    (360.0, 30.0),  # 2: Dianteira Inferior (Livre - Oblongo)
+    (300.0, 75.0)   # 3: Dianteira Superior (Livre - Oblongo)
+]
 
-# Suporte Impresso
-FOLGA_FURO_M4 = 0.2
-COMP_SUPORTE_X = 61.2
-POS_X_MOTOR_REAL = 45.6
-RECUO_Y_MOTOR = 17.7
-CORTES_MONTAGEM_MOTOR = 15.0
+# --- Folgas e Montagem ---
+DIST_CATRACA_PAREDE = 5.0 # Espaço entre a catraca e a madeira

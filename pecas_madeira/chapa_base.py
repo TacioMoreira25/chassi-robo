@@ -1,64 +1,41 @@
 from build123d import *
-import config
-import medidas
+import config as cfg
+import medidas as med
 
-def _gerar_perfil_base()-> Part:
-    """ Extrusão do perfil 2D base (assoalho) """
+def criar_chapa_base() -> Part:
+    """ 
+    Cria a chapa base retangular que sustenta o chassi de madeira.
+    """
+    comp_base = cfg.CONFIG["COMP_TOTAL"]
+    largura = cfg.CONFIG["LARG_INTERNA"]
+    espessura = cfg.CONFIG["ESPESSURA_MADEIRA"]
+    
+    # A chapa base será centralizada em X = 200, na altura Z = 0
+    centro_x = cfg.CONFIG["COMP_TOTAL"] / 2
+    
     with BuildPart() as base:
-        with BuildSketch(Plane.XY):
-            with Locations((config.COMP_BAY / 2, 0)):
-                Rectangle(config.COMP_BAY, medidas.LARG_LINGUA)
-            with Locations((config.COMP_BAY + (medidas.COMP_CORPO / 2), 0)):
-                Rectangle(medidas.COMP_CORPO, config.LARG_EXTERNA)
-        extrude(amount=config.ESPESSURA_PISO)
+        with Locations((centro_x, 0, espessura / 2)):
+            Box(comp_base, largura, espessura)
+            
+    base.part.color = Color("#181818") # Preto Fosco
     return base.part
 
-def _aplicar_furos_tensionador(part: Part) -> Part:
-    """ Furações frontais de fixação do tensionador """
-    dist_frontais = [medidas.DIST_FRONTAIS_TENSIONADOR_1, medidas.DIST_FRONTAIS_TENSIONADOR_2]
-    pos_y_furos = (medidas.LARG_LINGUA / 2) - medidas.RECUO_Y_TENSIONADOR
+def criar_parede_pequena() -> Part:
+    """
+    Parede vertical pequena que fecha as extremidades inferior da frente e traseira.
+    """
+    comp = cfg.CONFIG["ESPESSURA_MADEIRA"] # 12mm
+    largura = cfg.CONFIG["LARG_INTERNA"] # 198mm
+    altura = 40.0
     
-    with BuildPart() as subtraida:
-        add(part)
-        with BuildSketch(Plane.XY):
-            with Locations(
-                [(x, y) for x in dist_frontais for y in (pos_y_furos, -pos_y_furos)]
-            ):
-                Circle(radius=medidas.RAIO_FURO_M4)
-        extrude(amount=config.ESPESSURA_PISO * 2, both=True, mode=Mode.SUBTRACT)
-    return subtraida.part
-
-def _aplicar_furos_paredes(part: Part) -> Part:
-    """ Escareamentos de fixação vertical das paredes de madeira """
-    y_ext = config.LARG_EXTERNA / 2 - config.ESPESSURA_PAREDE / 2
-    y_ling= medidas.LARG_LINGUA / 2 - config.ESPESSURA_PAREDE / 2
-    
-    x_pos = [
-        config.ESPESSURA_PAREDE / 2,                       # Frente Extrema
-        config.COMP_BAY + config.ESPESSURA_PAREDE / 2,     # Frente Caixa
-        config.COMP_BAY + (medidas.COMP_CORPO / 2),         # Divisória
-        config.COMP_TOTAL - config.ESPESSURA_PAREDE / 2    # Atrás
-    ]
-    
-    with BuildPart() as montada:
-        add(part)
-        with BuildSketch(Plane.XY):
-            with Locations(
-                [(x_pos[0], y) for y in (y_ling, -y_ling)],                # Ponta menor
-                [(x, y) for x in x_pos[1:] for y in (y_ext, -y_ext)]       # Caixa larga
-            ):
-                Circle(radius=medidas.RAIO_FURO_BASE)
-        extrude(amount=config.ESPESSURA_PISO * 2, both=True, mode=Mode.SUBTRACT)
-    return montada.part
-
-def criar_chapa_base():
-    """ Orquestra a montagem geométrica e furos da chapa base """
-    chapa = _gerar_perfil_base()
-    chapa = _aplicar_furos_tensionador(chapa)
-    chapa = _aplicar_furos_paredes(chapa)
-    return chapa
+    with BuildPart() as parede:
+        Box(comp, largura, altura)
+        
+    parede.part.color = Color("#181818") # Preto Fosco
+    return parede.part
 
 if __name__ == "__main__":
     from ocp_vscode import show
     chapa = criar_chapa_base()
-    show(chapa, names=["Chapa Base (Assoalho)"], colors=["#d2b48c"])
+    p_pequena = criar_parede_pequena()
+    show(chapa, p_pequena)

@@ -1,120 +1,63 @@
 from build123d import *
-import config
-import medidas
+import config as cfg
+import medidas as med
 
-def _construir_vigas(centro_z, centro_x_caixa, y_esq) -> Part:
-    """ Gera as vigas longitudinais e transversais """
-    with BuildPart() as base:
-        with Locations((centro_x_caixa, y_esq, centro_z), (centro_x_caixa, -y_esq, centro_z)):
-            Box(medidas.COMP_CORPO, config.ESPESSURA_PAREDE, config.ALT_PAREDE)
-        
-        crosses = [
-            (config.ESPESSURA_PAREDE/2, medidas.LARG_LINGUA),
-            (config.COMP_BAY + config.ESPESSURA_PAREDE/2, medidas.LARG_INTERNA),
-            (config.COMP_TOTAL - config.ESPESSURA_PAREDE/2, medidas.LARG_INTERNA),
-            (centro_x_caixa, medidas.LARG_INTERNA)
-        ]
-        
-        for pos_x, larg in crosses:
-            with Locations((pos_x, 0, centro_z)):
-                Box(config.ESPESSURA_PAREDE, larg, config.ALT_PAREDE)
-    return base.part
-
-def _cortar_oblongos_rodas(part: Part, centro_z) -> Part:
-    """ Cortes oblongos e furações para o eixo das rodas """
-    pos_ovais = config.COMP_TOTAL - medidas.RECUO_OVAL_RODA
-    sp_x, sp_z = medidas.SP_X_RODAS, medidas.SP_Z_RODAS
+def _gerar_perfil_parede() -> Part:
+    """
+    Gera a parede lateral trapezoidal idêntica ao vídeo do Creative Home Tank.
+    Sem rasgos centrais (removido o furo não desejado) e com quinas retas simples.
+    """
+    z_top = cfg.CONFIG["ALT_PAREDE"] # 110
+    x_recuo_top = cfg.CONFIG["RECUO_CHANFRO_X"] # 80
     
-    with BuildPart() as montada:
-        add(part)
-        with BuildSketch(Plane.XZ):
-            with Locations((pos_ovais, centro_z)):
-                SlotOverall(width=medidas.LARG_OBLONGO_RODA, height=medidas.ALT_OBLONGO_RODA)
-                with Locations([(x, y) for x in (sp_x, -sp_x) for y in (sp_z, -sp_z)]):
-                    Circle(radius=medidas.RAIO_FURO_M4)
-        extrude(amount=config.LARG_EXTERNA, both=True, mode=Mode.SUBTRACT)
-    return montada.part
-
-def _cortar_passagem_cabos(part: Part, centro_z) -> Part:
-    """ Furos de passagem para cabeamento """
-    pos_interna = config.COMP_BAY + config.ESPESSURA_PAREDE/2
-    y_quina = medidas.LARG_LINGUA/2 - medidas.MARGEM_FURACOES_QUINA
-    z_quina = config.ALT_PAREDE/2 - medidas.MARGEM_FURACOES_QUINA
-
-    with BuildPart() as montada:
-        add(part)
-        with BuildSketch(Plane.YZ.offset(pos_interna)):
-            with Locations((0, centro_z)):
-                Circle(radius=medidas.RAIO_PASSAGEM_CABO)
-            with Locations([(x, centro_z + y) for x in (y_quina, -y_quina) for y in (z_quina, -z_quina)]):
-                Circle(radius=medidas.RAIO_FURO_M4)
-        extrude(amount=config.ESPESSURA_PAREDE, both=True, mode=Mode.SUBTRACT)
-    return montada.part
-
-def _furo_oval_alca(part: Part, centro_z, centro_x_caixa) -> Part:
-    """ Abertura central para alça de transporte """
-    with BuildPart() as montada:
-        add(part)
-        with BuildSketch(Plane.YZ.offset(centro_x_caixa)):
-            with Locations((0, centro_z)):
-                SlotOverall(width=medidas.LARG_OVAL_ALCA, height=medidas.ALT_OVAL_ALCA)
-        extrude(amount=config.ESPESSURA_PAREDE, both=True, mode=Mode.SUBTRACT)
-    return montada.part
-
-def _furos_motor_central(part: Part, centro_z, centro_x_caixa) -> Part:
-    """ Furações de fixação (XZ) para o motor central """
-    pos_motor = centro_x_caixa - medidas.RECUO_MOTOR
-    sp_x, sp_z = medidas.DIST_X_FUROS_MOTOR, medidas.DIST_Z_FUROS_MOTOR
-
-    with BuildPart() as montada:
-        add(part)
-        with BuildSketch(Plane.XZ):
-            with Locations((pos_motor, centro_z)):
-                Circle(radius=medidas.RAIO_EIXO_MOTOR)  
-                with Locations([(x, y) for x in (sp_x, -sp_x) for y in (sp_z, -sp_z)]):
-                    Circle(radius=medidas.RAIO_FURO_M4)  
-        extrude(amount=config.LARG_EXTERNA, both=True, mode=Mode.SUBTRACT)
-    return montada.part
-
-def _furos_verticais_fixacao(part: Part, centro_z, y_esq) -> Part:
-    """ Furos verticais (M5) para fixação da tampa superior """
-    locs = [
-        (config.COMP_BAY + config.ESPESSURA_PAREDE/2, y_esq),
-        (config.COMP_TOTAL - config.ESPESSURA_PAREDE/2, y_esq)
+    # 4 Pontos do Trapézio perfeito (Base=400, Topo=240)
+    pts = [
+        (x_recuo_top, z_top),                                # Quina Traseira Superior (80, 110)
+        (cfg.CONFIG["COMP_TOTAL"] - x_recuo_top, z_top),     # Quina Dianteira Superior (320, 110)
+        (cfg.CONFIG["COMP_TOTAL"], 0),                       # Quina Dianteira Inferior (400, 0)
+        (0, 0)                                               # Quina Traseira Inferior (0, 0)
     ]
-    with BuildPart() as montada:
-        add(part)
-        with BuildSketch(Plane.XY.offset(centro_z + config.ALT_PAREDE/2)):
-            with Locations([(x, y) for x, y_fix in locs for y in (y_fix, -y_fix)]):
-                Circle(radius=medidas.RAIO_FURO_M5) # Raio maior (M5) teto
-        extrude(amount=-10.0, mode=Mode.SUBTRACT)
-    return montada.part
-
-def _furos_tensionador_dianteiro(part: Part, centro_z) -> Part:
-    """ Furações frontais (M4) para o módulo tensionador """
-    d_y = medidas.LARG_LINGUA/2 - medidas.MARGEM_FURACOES_QUINA
-    d_z = config.ALT_PAREDE/2 - medidas.MARGEM_FURACOES_QUINA
     
-    with BuildPart() as subtraida:
-        add(part)
-        with BuildSketch(Plane.YZ.offset(0)):
-            with Locations([(x, centro_z + y) for x in (d_y, -d_y) for y in (d_z, -d_z)]):
-                Circle(radius=medidas.RAIO_FURO_M4)
-        extrude(amount=config.ESPESSURA_PAREDE, both=True, mode=Mode.SUBTRACT)
-    return subtraida.part
+    with BuildPart() as parede:
+        with BuildSketch(Plane.XZ):
+            Polygon(*pts)
+            
+            # Oblongos (Slots) para tensionamento nas 3 catracas livres
+            with Locations((med.FUROS_RODAS[1][0], med.FUROS_RODAS[1][1]),
+                           (med.FUROS_RODAS[2][0], med.FUROS_RODAS[2][1]),
+                           (med.FUROS_RODAS[3][0], med.FUROS_RODAS[3][1])):
+                SlotOverall(med.LARG_OBLONGO, med.ALT_OBLONGO, mode=Mode.SUBTRACT)
+                
+            # Furo central do Motor Johnson (Traseira Superior)
+            with Locations((med.FUROS_RODAS[0][0], med.FUROS_RODAS[0][1])):
+                Circle(med.DIAM_RESSALTO / 2 + 1.0, mode=Mode.SUBTRACT)
+                # 6 furos M4 para fixar o motor (raio 14mm)
+                with PolarLocations(14.0, 6):
+                    Circle(2.0, mode=Mode.SUBTRACT)
+                
+        extrude(amount=cfg.CONFIG["ESPESSURA_MADEIRA"])
+        
+    return parede.part
 
-def criar_paredes():
-    """ Gera o conjunto de chicanas e laterais estruturais """
-    centro_z = config.ESPESSURA_PISO + (config.ALT_PAREDE / 2)
-    y_esq = config.LARG_EXTERNA/2 - config.ESPESSURA_PAREDE/2
-    centro_x_caixa = config.COMP_BAY + (medidas.COMP_CORPO / 2)
+def criar_paredes() -> Part:
+    """
+    Retorna o conjunto (Esquerda e Direita) já na cor Cinza Escuro.
+    """
+    parede_dir = _gerar_perfil_parede()
+    parede_esq = _gerar_perfil_parede()
     
-    # Executa o Pipeline Funcional (Adições -> Subtrações -> Finalização)
-    p = _construir_vigas(centro_z, centro_x_caixa, y_esq)
-    p = _cortar_oblongos_rodas(p, centro_z)
-    p = _cortar_passagem_cabos(p, centro_z)
-    p = _furo_oval_alca(p, centro_z, centro_x_caixa)
-    p = _furos_motor_central(p, centro_z, centro_x_caixa)
-    p = _furos_verticais_fixacao(p, centro_z, y_esq)
-    p = _furos_tensionador_dianteiro(p, centro_z)
-    return p
+    y_esq = cfg.CONFIG["LARG_INTERNA"] / 2 + cfg.CONFIG["ESPESSURA_MADEIRA"] / 2
+    
+    with BuildPart() as paredes_completas:
+        with Locations((0, -y_esq, 0)):
+            add(parede_dir)
+        with Locations((0, y_esq, 0)):
+            add(parede_esq)
+            
+    paredes_completas.part.color = Color("#181818") # Preto Fosco
+    return paredes_completas.part
+
+if __name__ == "__main__":
+    from ocp_vscode import show
+    p = criar_paredes()
+    show(p, names=["Paredes Laterais Tank"])
