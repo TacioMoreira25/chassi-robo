@@ -27,23 +27,26 @@ COMP_MOTOR_JOHNSON = 60.0 # Valor tipico
 DIAM_RESSALTO = 12.2
 ALTURA_RESSALTO = 4.0
 DIAM_EIXO_MOTOR = 6.0
-COMP_EIXO_MOTOR = 15.0
+COMP_EIXO_MOTOR = 30.0
 
 # --- Tensionador ---
 LARG_OBLONGO = 25.0
 ALT_OBLONGO = 8.5 # Para eixo M8 deslizar
 
-# --- Coordenadas dos Furos (X, Z) das Rodas / Catracas ---
-# X medido da traseira para a frente (0 a 400).
-# Z medido da base plana para cima.
-# O robô é um trapézio: Base 400, Topo 240. 
-# As rodas inferiores ficam mais afastadas que as superiores.
+# --- FUROS DAS CATRACAS ---
+# Origem X=0 no centro da parede, Z=0 na base.
+# Parede tem comprimento total de 400mm (-200 a +200) e altura 110mm.
 FUROS_RODAS = [
-    (90.0, 90.0),   # 0: Traseira Superior (Motriz - Motor)
-    (40.0, 30.0),   # 1: Traseira Inferior (Livre - Oblongo)
-    (360.0, 30.0),  # 2: Dianteira Inferior (Livre - Oblongo)
-    (300.0, 75.0)   # 3: Dianteira Superior (Livre - Oblongo)
+    (-120.0, 25.0), # 0: Inferior Traseira (Motriz - Motor) -> RODA 3
+    (-170.0, 85.0), # 1: Superior Traseira (Livre - Eixo Fixo) -> RODA 1
+    (170.0, 85.0),  # 2: Superior Dianteira (Tensionadora - Oblongo) -> RODA 2
+    (120.0, 25.0)   # 3: Inferior Dianteira (Livre - Eixo Fixo) -> RODA 4
 ]
+
+
+# Dimensões do rasgo oblongo para tensionamento
+LARG_OBLONGO = 25.0
+ALT_OBLONGO = 8.5
 
 # --- Folgas e Montagem ---
 DIST_CATRACA_PAREDE = 5.0 # Espaço entre a catraca e a madeira

@@ -3,7 +3,7 @@ import math
 import config as cfg
 import medidas as med
 
-from pecas_madeira import chapa_base, paredes
+from pecas_madeira import chapa_base, paredes, travessas
 from pecas_mecanicas import motor_johnson, catraca_18t, eixos
 
 def montar_chassi() -> Compound:
@@ -12,15 +12,13 @@ def montar_chassi() -> Compound:
     """
     # --- CHAPAS DE MADEIRA ---
     base = chapa_base.criar_chapa_base()
-    parede_conj = paredes.criar_paredes()
     
-    # As paredes pequenas (front/rear plates verticais no fundo)
-    parede_pequena = chapa_base.criar_parede_pequena()
-    # Altura é 40mm. O centro em Z deve ser base_espessura + altura/2 = 12 + 20 = 32
-    # Parede traseira (X = 6)
-    p_tras = parede_pequena.moved(Location((cfg.CONFIG["ESPESSURA_MADEIRA"] / 2, 0, cfg.CONFIG["ESPESSURA_MADEIRA"] + 20.0)))
-    # Parede frontal (X = 394)
-    p_frente = parede_pequena.moved(Location((cfg.CONFIG["COMP_TOTAL"] - cfg.CONFIG["ESPESSURA_MADEIRA"] / 2, 0, cfg.CONFIG["ESPESSURA_MADEIRA"] + 20.0)))
+    # As paredes laterais são movidas para cima para ficarem sobre a base
+    espessura = cfg.CONFIG["ESPESSURA_MADEIRA"]
+    parede_conj = paredes.criar_paredes().moved(Location((0, 0, espessura)))
+    
+    # As travessas (front/rear plates)
+    travessas_conj = travessas.criar_travessas().moved(Location((0, 0, espessura)))
     
     # --- CATRACAS ---
     catraca_modelo = catraca_18t.criar_catraca_com_bucha()
@@ -35,7 +33,9 @@ def montar_chassi() -> Compound:
     
     catracas_lista = []
     
-    for (x_centro, z_centro) in med.FUROS_RODAS:
+    eixos_lista = []
+    for (x_centro, z_centro_rel) in med.FUROS_RODAS:
+        z_centro = z_centro_rel + espessura
         y_pos_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA / 2
         c_dir = catraca_girada_dir.moved(Location((x_centro, y_pos_dir, z_centro)))
         
@@ -58,7 +58,7 @@ def montar_chassi() -> Compound:
     y_int_esq = cfg.CONFIG["LARG_INTERNA"] / 2
     
     x_motriz = med.FUROS_RODAS[0][0]
-    z_motriz = med.FUROS_RODAS[0][1]
+    z_motriz = med.FUROS_RODAS[0][1] + espessura
     
     m_dir = motor_dir.moved(Location((x_motriz, y_int_dir, z_motriz)))
     m_esq = motor_esq.moved(Location((x_motriz, y_int_esq, z_motriz)))
@@ -81,7 +81,8 @@ def montar_chassi() -> Compound:
     
     eixos_lista = []
     # Eixos nas 3 rodas livres (índices 1, 2, 3)
-    for (x_centro, z_centro) in med.FUROS_RODAS[1:]:
+    for (x_centro, z_centro_rel) in med.FUROS_RODAS[1:]:
+        z_centro = z_centro_rel + espessura
         # O parafuso M8 encosta a cabeça do lado de fora da catraca
         y_cabeca_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA
         e_d = eixo_dir.moved(Location((x_centro, y_cabeca_dir, z_centro)))
@@ -97,8 +98,7 @@ def montar_chassi() -> Compound:
 
     chassi_global = Compound(label="Creative Home Tank", children=[
         base, 
-        p_tras,
-        p_frente,
+        travessas_conj,
         parede_conj, 
         conjunto_catracas,
         conjunto_motores,
