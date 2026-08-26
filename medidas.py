@@ -35,12 +35,11 @@ ALT_OBLONGO = 8.5 # Para eixo M8 deslizar
 
 # --- FUROS DAS CATRACAS ---
 # Origem X=0 no centro da parede, Z=0 na base.
-# Parede tem comprimento total de 400mm (-200 a +200) e altura 110mm.
 FUROS_RODAS = [
-    (-120.0, 25.0), # 0: Inferior Traseira (Motriz - Motor) -> RODA 3
-    (-170.0, 85.0), # 1: Superior Traseira (Livre - Eixo Fixo) -> RODA 1
-    (170.0, 85.0),  # 2: Superior Dianteira (Tensionadora - Oblongo) -> RODA 2
-    (120.0, 25.0)   # 3: Inferior Dianteira (Livre - Eixo Fixo) -> RODA 4
+    (-120.0, 20.0), # 0: Inferior Traseira (Motriz - Motor Johnson) -> RODA 3
+    (-120.0, 90.0), # 1: Superior Traseira (Livre - Eixo Fixo M8) -> RODA 1
+    (120.0, 90.0),  # 2: Superior Dianteira (Livre - Eixo Fixo M8) -> RODA 2
+    (120.0, 20.0)   # 3: Inferior Dianteira (Tensionadora - Slot Oblongo) -> RODA 4
 ]
 
 

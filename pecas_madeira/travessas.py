@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from build123d import *
 import config as cfg
 import medidas as med
@@ -5,19 +9,19 @@ import medidas as med
 def criar_travessas() -> Part:
     """
     Cria as duas travessas retangulares de fechamento (frente e traseira).
-    Dimensões: LARG_INTERNA x ALT_TRAVESSA x ESPESSURA_MADEIRA
+    Dimensões: LARG_INTERNA (196mm) x ALT_TRAVESSA (20mm) x ESPESSURA_MADEIRA (12mm)
     """
-    comp = cfg.CONFIG["LARG_INTERNA"] # 196.0
-    altura = cfg.CONFIG["ALT_TRAVESSA"] # 20.0
-    espessura = cfg.CONFIG["ESPESSURA_MADEIRA"] # 12.0
+    comp = cfg.CONFIG["LARG_INTERNA"]            # 196.0 mm
+    altura = cfg.CONFIG["ALT_TRAVESSA"]          # 20.0 mm
+    espessura = cfg.CONFIG["ESPESSURA_MADEIRA"]  # 12.0 mm
     
-    comp_base = cfg.CONFIG["COMP_TOTAL"]
+    comp_base = cfg.CONFIG["COMP_TOTAL"]         # 400.0 mm
     
     with BuildPart() as travessas:
-        # Travessa Traseira (X próximo a -145)
+        # Travessa Traseira (na extremidade da base de 400mm)
         with Locations((-comp_base / 2 + espessura / 2, 0, altura / 2)):
             Box(espessura, comp, altura)
-        # Travessa Frontal (X próximo a +145)
+        # Travessa Frontal (na extremidade da base de 400mm)
         with Locations((comp_base / 2 - espessura / 2, 0, altura / 2)):
             Box(espessura, comp, altura)
             
