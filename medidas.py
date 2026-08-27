@@ -34,12 +34,12 @@ LARG_OBLONGO = 25.0
 ALT_OBLONGO = 8.5 # Para eixo M8 deslizar
 
 # --- FUROS DAS CATRACAS ---
-# Origem X=0 no centro da parede, Z=0 na base.
+# Origem X=0 no centro da parede, Z=0 na base (fundo).
 FUROS_RODAS = [
-    (-120.0, 20.0), # 0: Inferior Traseira (Motriz - Motor Johnson) -> RODA 3
-    (-120.0, 90.0), # 1: Superior Traseira (Livre - Eixo Fixo M8) -> RODA 1
-    (120.0, 90.0),  # 2: Superior Dianteira (Livre - Eixo Fixo M8) -> RODA 2
-    (120.0, 20.0)   # 3: Inferior Dianteira (Tensionadora - Slot Oblongo) -> RODA 4
+    (-175.0, 85.0), # 0: Superior Traseira (Motriz - Motor Johnson) -> Fica perto do teto/chapa_base
+    (-120.0, 40.0), # 1: Inferior Traseira (Livre - Eixo Fixo M8) -> Fica embaixo, tocando o chão
+    (175.0, 85.0),  # 2: Superior Dianteira (Tensionadora - Slot Oblongo)
+    (120.0, 40.0)   # 3: Inferior Dianteira (Livre - Eixo Fixo M8)
 ]
 
 
@@ -48,4 +48,4 @@ LARG_OBLONGO = 25.0
 ALT_OBLONGO = 8.5
 
 # --- Folgas e Montagem ---
-DIST_CATRACA_PAREDE = 5.0 # Espaço entre a catraca e a madeira
+DIST_CATRACA_PAREDE = 13.0 # Espaço exato para as duas porcas M8 (6.5mm cada) atuarem como espaçador

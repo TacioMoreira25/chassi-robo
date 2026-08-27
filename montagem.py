@@ -11,36 +11,47 @@ def montar_chassi() -> Compound:
     Realiza a montagem global do Creative Home Tank perfeitamente alinhada.
     """
     # --- CHAPAS DE MADEIRA ---
-    base = chapa_base.criar_chapa_base()
-    
-    # As paredes laterais são movidas para cima para ficarem sobre a base
     espessura = cfg.CONFIG["ESPESSURA_MADEIRA"]
-    parede_conj = paredes.criar_paredes().moved(Location((0, 0, espessura)))
+    z_teto = cfg.CONFIG["ALT_PAREDE"]
     
-    # As travessas (front/rear plates)
-    travessas_conj = travessas.criar_travessas().moved(Location((0, 0, espessura)))
+    # A base do robô (que na verdade é o teto) vai para o topo!
+    base = chapa_base.criar_chapa_base().moved(Location((0, 0, z_teto)))
+    
+    # As paredes laterais ficam apoiadas no chão (Z=0)
+    parede_conj = paredes.criar_paredes()
+    
+    # As travessas são coladas por baixo do teto (Z = z_teto - altura_delas)
+    z_travessas = z_teto - cfg.CONFIG["ALT_TRAVESSA"]
+    travessas_conj = travessas.criar_travessas().moved(Location((0, 0, z_travessas)))
     
     # --- CATRACAS ---
-    catraca_modelo = catraca_18t.criar_catraca_com_bucha()
-    # A catraca livre fica "de costas", com a bucha (em +Z no modelo) voltada para a madeira.
-    # Parede Direita (-Y): Queremos que o +Z da catraca aponte para +Y (Inwards). Rotation(-90,0,0) faz isso.
-    catraca_girada_dir = catraca_modelo.moved(Rotation(-90, 0, 0))
-    # Parede Esquerda (+Y): Queremos que o +Z da catraca aponte para -Y (Inwards). Rotation(90,0,0) faz isso.
-    catraca_girada_esq = catraca_modelo.moved(Rotation(90, 0, 0))
+    catraca_livre = catraca_18t.criar_catraca_com_bucha()
+    catraca_motriz = catraca_18t.criar_catraca_motriz()
     
     y_parede_dir = -cfg.CONFIG["LARG_EXTERNA"] / 2
     y_parede_esq = cfg.CONFIG["LARG_EXTERNA"] / 2
     
     catracas_lista = []
     
-    eixos_lista = []
-    for (x_centro, z_centro_rel) in med.FUROS_RODAS:
-        z_centro = z_centro_rel + espessura
-        y_pos_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA / 2
-        c_dir = catraca_girada_dir.moved(Location((x_centro, y_pos_dir, z_centro)))
+    for i, (x_centro, z_centro_rel) in enumerate(med.FUROS_RODAS):
+        z_centro = z_centro_rel
         
+        # Se for o furo 0, é a motriz. Se não, é a livre.
+        if i == 0:
+            modelo = catraca_motriz
+        else:
+            modelo = catraca_livre
+            
+        # A catraca livre fica "de costas", com a bucha (em +Z no modelo) voltada para a madeira.
+        # Parede Direita (-Y): Queremos que o +Z da catraca aponte para +Y (Inwards). Rotation(-90,0,0)
+        c_dir = modelo.moved(Rotation(-90, 0, 0))
+        y_pos_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA / 2
+        c_dir = c_dir.moved(Location((x_centro, y_pos_dir, z_centro)))
+        
+        # Parede Esquerda (+Y): Queremos que o +Z da catraca aponte para -Y (Inwards). Rotation(90,0,0)
+        c_esq = modelo.moved(Rotation(90, 0, 0))
         y_pos_esq = y_parede_esq + med.DIST_CATRACA_PAREDE + med.ESPESSURA_CATRACA / 2
-        c_esq = catraca_girada_esq.moved(Location((x_centro, y_pos_esq, z_centro)))
+        c_esq = c_esq.moved(Location((x_centro, y_pos_esq, z_centro)))
         
         catracas_lista.extend([c_dir, c_esq])
         
@@ -58,7 +69,7 @@ def montar_chassi() -> Compound:
     y_int_esq = cfg.CONFIG["LARG_INTERNA"] / 2
     
     x_motriz = med.FUROS_RODAS[0][0]
-    z_motriz = med.FUROS_RODAS[0][1] + espessura
+    z_motriz = med.FUROS_RODAS[0][1]
     
     m_dir = motor_dir.moved(Location((x_motriz, y_int_dir, z_motriz)))
     m_esq = motor_esq.moved(Location((x_motriz, y_int_esq, z_motriz)))
@@ -82,7 +93,7 @@ def montar_chassi() -> Compound:
     eixos_lista = []
     # Eixos nas 3 rodas livres (índices 1, 2, 3)
     for (x_centro, z_centro_rel) in med.FUROS_RODAS[1:]:
-        z_centro = z_centro_rel + espessura
+        z_centro = z_centro_rel
         # O parafuso M8 encosta a cabeça do lado de fora da catraca
         y_cabeca_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA
         e_d = eixo_dir.moved(Location((x_centro, y_cabeca_dir, z_centro)))

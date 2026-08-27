@@ -8,7 +8,7 @@ def criar_eixo_m8() -> Part:
     A cabeça do parafuso fica na origem (Z=0).
     A rosca se estende até Z=75.
     """
-    comp = 40.0 
+    comp = 60.0 # Parafuso um pouco mais longo para caber as duas porcas + parede + arruela
     
     with BuildPart() as parafuso:
         # Cabeça Sextavada (chave 13mm para M8)
@@ -20,6 +20,13 @@ def criar_eixo_m8() -> Part:
         with BuildSketch(Plane.XY):
             Circle(med.RAIO_FURO_EIXO_M8)
         extrude(amount=comp)
+        
+        # As duas porcas de travamento (contra-porcas) que ficam logo após a catraca
+        # A catraca tem 15mm de espessura. Então as porcas começam no Z=15
+        with BuildSketch(Plane.XY.offset(15.0)):
+            RegularPolygon(radius=13.0/2, side_count=6)
+            Circle(med.RAIO_FURO_EIXO_M8, mode=Mode.SUBTRACT)
+        extrude(amount=13.0) # Duas porcas de 6.5mm cada
         
     parafuso.part.color = Color("silver")
     return parafuso.part
