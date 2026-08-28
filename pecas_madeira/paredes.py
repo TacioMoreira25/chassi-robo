@@ -8,25 +8,26 @@ import medidas as med
 
 def _gerar_perfil_parede() -> Part:
     """
-    Gera a parede lateral trapezoidal idêntica ao modelo real das fotos:
-    - Base reto de 400mm no chão (Z=0).
-    - Topo reto de 290mm a 110mm de altura (Z=110mm).
-    - Transição nas pontas em Z=40mm (X=±200mm).
+    Gera a parede lateral trapezoidal conforme o layout técnico:
+    - Topo reto de 400mm a 110mm de altura (Z=110mm).
+    - Descida vertical reta nas pontas até Z=70mm (X=±200mm).
+    - Chanfro diagonal descendo de (±200mm, 70mm) até a base (±125mm, 0mm).
+    - Base reta de 250mm no chão (Z=0mm).
     """
     z_top = cfg.CONFIG["ALT_PAREDE"]              # 110.0 mm
-    comp_topo = cfg.CONFIG["COMP_TOTAL"]          # 400.0 mm (Borda reta maior)
-    comp_base = cfg.CONFIG["COMP_BASE"]           # 240.0 mm (Borda reta menor)
-    chanfro_z = cfg.CONFIG["CHANFRO_Z"]           # 85.0 mm
+    comp_topo = cfg.CONFIG["COMP_TOTAL"]          # 400.0 mm (Borda reta maior do topo)
+    comp_base = cfg.CONFIG["COMP_BASE"]           # 250.0 mm (Borda reta menor da base)
+    chanfro_z = cfg.CONFIG["CHANFRO_Z"]           # 70.0 mm (Altura da quina e dos eixos superiores)
     
-    # 6 Pontos do Perfil Trapezoidal (Origem X=0, Z=0 na base menor centralizada)
-    # Desenho na orientação correta (Topo = 400mm em Z=110, Base = 240mm em Z=0)
+    # 6 Pontos do Perfil Trapezoidal (Origem X=0, Z=0 na base centralizada)
+    # Desenho na orientação correta (Topo = 400mm em Z=110, Base = 250mm em Z=0)
     pts = [
         (-comp_topo/2, z_top),             # Topo Traseiro (-200, 110)
         (comp_topo/2, z_top),              # Topo Dianteiro (200, 110)
-        (comp_topo/2, chanfro_z),          # Quina lateral dianteira desce reta (200, 85)
-        (comp_base/2, 0.0),                # Fundo Dianteiro, fim do chanfro (120, 0)
-        (-comp_base/2, 0.0),               # Fundo Traseiro, início do chanfro (-120, 0)
-        (-comp_topo/2, chanfro_z)          # Quina lateral traseira sobe reta (-200, 85)
+        (comp_topo/2, chanfro_z),          # Quina lateral dianteira (200, 70)
+        (comp_base/2, 0.0),                # Fundo Dianteiro, fim do chanfro (125, 0)
+        (-comp_base/2, 0.0),               # Fundo Traseiro, início do chanfro (-125, 0)
+        (-comp_topo/2, chanfro_z)          # Quina lateral traseira (-200, 70)
     ]
     
     with BuildPart() as parede:
