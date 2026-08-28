@@ -45,11 +45,8 @@ def criar_catraca_com_bucha() -> Compound:
     with BuildPart() as bucha:
         with BuildSketch(Plane.XY):
             Circle(med.OD_BUCHA / 2)
-            Circle(med.ID_ROLAMENTO_608 / 2, mode=Mode.SUBTRACT)
+            Circle(med.DIAM_EIXO_M8 / 2, mode=Mode.SUBTRACT)
         extrude(amount=med.ESPESSURA_BUCHA)
-        with BuildSketch(Plane.XY.offset(med.ESPESSURA_BUCHA - med.PROF_REBAIXO_BUCHA)):
-            Circle(med.DIAM_REBAIXO_BUCHA / 2)
-        extrude(amount=med.PROF_REBAIXO_BUCHA, mode=Mode.SUBTRACT)
         
     bucha.part.color = Color("#111111")
     conj = Compound(label="Catraca Livre 18T", children=[anel_interno, catraca_externa, bucha.part])

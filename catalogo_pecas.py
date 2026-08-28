@@ -9,6 +9,7 @@ from pecas_madeira.paredes import _gerar_perfil_parede
 from pecas_mecanicas.motor_johnson import criar_motor_johnson
 from pecas_mecanicas.catraca_18t import criar_catraca_com_bucha
 from pecas_mecanicas.flange_coupling import criar_flange_coupling
+from pecas_impressas.suportes import criar_suporte_rolamento, criar_suporte_motor
 
 def visualizar_catalogo():
     """
@@ -29,14 +30,20 @@ def visualizar_catalogo():
     # 4. Flange Acoplador (Novo da sua foto!)
     flange = criar_flange_coupling()
     
+    # 5. Suportes impressos em 3D
+    s_motor = criar_suporte_motor()
+    s_rolamento = criar_suporte_rolamento()
+    
     # Vamos espaçar elas no eixo Y para criar um "mostruário" flutuante
-    distancia_separacao = 150
+    distancia_separacao = 120
     
     catalogo = Compound(label="Catálogo de Peças (Isoladas)", children=[
         parede_isolada.moved(Location((0, -distancia_separacao, 0))),
         catraca.moved(Location((0, 0, 50))),
         motor.moved(Location((0, distancia_separacao, 50))),
-        flange.moved(Location((0, distancia_separacao * 2, 50)))
+        flange.moved(Location((0, distancia_separacao * 2, 50))),
+        s_motor.moved(Location((0, distancia_separacao * 3, 50))),
+        s_rolamento.moved(Location((0, distancia_separacao * 4, 50)))
     ])
     
     return catalogo

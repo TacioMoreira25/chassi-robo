@@ -8,6 +8,8 @@ DIAM_EIXO_M8 = 8.0
 OD_ROLAMENTO_608 = 22.0
 ID_ROLAMENTO_608 = 8.0
 ALTURA_ROLAMENTO_608 = 7.0
+COMP_PARAFUSO_M8 = 75.0   # Comprimento nominal de 75mm para os eixos
+DIAM_FURO_MADEIRA = 40.0  # Furo circular de 40mm na lateral de madeira para os suportes de rolamento/motor
 
 # --- Catracas de Bicicleta 18T ---
 DIAM_CATRACA = 76.0      # Diametro externo total aproximado

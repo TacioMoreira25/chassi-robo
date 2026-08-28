@@ -32,24 +32,9 @@ def _gerar_perfil_parede() -> Part:
     with BuildPart() as parede:
         with BuildSketch(Plane.XZ):
             Polygon(*pts)
-            
-            # Furo 0: Motor Johnson (Superior Traseira: X=-175, Z=85)
-            with Locations((med.FUROS_RODAS[0][0], med.FUROS_RODAS[0][1])):
-                Circle(med.DIAM_RESSALTO / 2 + 1.0, mode=Mode.SUBTRACT)
-                with PolarLocations(14.0, 4, start_angle=45): # 4 furos de montagem em 'X'
-                    Circle(2.0, mode=Mode.SUBTRACT)
-                    
-            # Furo 1: Eixo Fixo M8 (Superior Traseira: X=-175, Z=85)
-            with Locations((med.FUROS_RODAS[1][0], med.FUROS_RODAS[1][1])):
-                Circle(med.DIAM_EIXO_M8 / 2 + 0.5, mode=Mode.SUBTRACT)
-                
-            # Furo 2: Slot Oblongo para tensionador (Superior Dianteira: X=175, Z=85)
-            with Locations((med.FUROS_RODAS[2][0], med.FUROS_RODAS[2][1])):
-                SlotOverall(med.LARG_OBLONGO, med.ALT_OBLONGO, mode=Mode.SUBTRACT)
-                
-            # Furo 3: Eixo Fixo M8 (Inferior Dianteira: X=120, Z=40)
-            with Locations((med.FUROS_RODAS[3][0], med.FUROS_RODAS[3][1])):
-                Circle(med.DIAM_EIXO_M8 / 2 + 0.5, mode=Mode.SUBTRACT)
+            # 4 furos circulares de Ø=40mm para os suportes de rolamento/motor
+            with Locations(med.FUROS_RODAS):
+                Circle(med.DIAM_FURO_MADEIRA / 2, mode=Mode.SUBTRACT)
                 
         extrude(amount=cfg.CONFIG["ESPESSURA_MADEIRA"] / 2, both=True)
         

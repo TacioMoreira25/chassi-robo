@@ -8,7 +8,7 @@ def criar_eixo_m8() -> Part:
     A cabeça do parafuso fica na origem (Z=0).
     A rosca se estende até Z=75.
     """
-    comp = 60.0 # Parafuso um pouco mais longo para caber as duas porcas + parede + arruela
+    comp = med.COMP_PARAFUSO_M8
     
     with BuildPart() as parafuso:
         # Cabeça Sextavada (chave 13mm para M8)
