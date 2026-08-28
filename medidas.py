@@ -12,7 +12,7 @@ COMP_PARAFUSO_M8 = 75.0   # Comprimento nominal de 75mm para os eixos
 DIAM_FURO_MADEIRA = 20.0  # Furo circular de 40mm na lateral de madeira para os suportes de rolamento/motor
 
 # --- Catracas de Bicicleta 18T ---
-DIAM_CATRACA = 76.0      # Diametro externo total aproximado
+DIAM_CATRACA = 78.0      # Diametro externo total aproximado
 ESPESSURA_CATRACA = 15.0 # Espessura
 DIAM_FURO_CATRACA = 32.9 # Furo interno roscado
 DENTES_CATRACA = 18
@@ -38,9 +38,9 @@ ALT_OBLONGO = 8.5 # Para eixo M8 deslizar
 # --- FUROS DAS CATRACAS ---
 # Origem X=0 no centro da parede, Z=0 na base (fundo).
 FUROS_RODAS = [
-    (-175.0, 70.0), # 0: Superior Traseira (Motriz - Motor Johnson) -> X=-175mm, Z=70mm
+    (-175.0, 90.0), # 0: Superior Traseira (Motriz - Motor Johnson) -> X=-175mm, Z=90mm
     (-120.0, 20.0), # 1: Inferior Traseira (Livre - Eixo Fixo M8) -> X=-120mm, Z=20mm
-    (175.0, 70.0),  # 2: Superior Dianteira (Tensionadora / Livre) -> X=+175mm, Z=70mm
+    (175.0, 90.0),  # 2: Superior Dianteira (Tensionadora / Livre) -> X=+175mm, Z=90mm
     (120.0, 20.0)   # 3: Inferior Dianteira (Livre - Eixo Fixo M8) -> X=+120mm, Z=20mm
 ]
 

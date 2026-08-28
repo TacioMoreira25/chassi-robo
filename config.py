@@ -15,7 +15,7 @@ CONFIG = {
     "LARG_INTERNA": 198.0,        # Largura interna correspondente à travessa de 198mm (222.0 - 2 * 12.0)
     
     # --- Geometria da Parede Lateral Trapezoidal (Perfil Real) ---
-    "COMP_BASE": 250.0,           # Fundo reto (250mm entre os chanfros inferiores)
-    "CHANFRO_X": 75.0,            # Largura do chanfro nas extremidades ((400 - 250) / 2 = 75mm)
-    "CHANFRO_Z": 70.0,            # Altura do início do chanfro / linha de centro dos eixos superiores (70mm)
+    "COMP_BASE": 260.0,           # Fundo reto (260mm entre os chanfros inferiores)
+    "CHANFRO_X": 70.0,            # Largura do chanfro nas extremidades ((400 - 260) / 2 = 70mm)
+    "CHANFRO_Z": 90.0,            # Altura do início do chanfro / linha de centro dos eixos superiores (90mm)
 }
