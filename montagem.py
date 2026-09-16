@@ -1,119 +1,189 @@
+"""
+===============================================================================
+THE IRON VANGUARD UGV - MONTAGEM GERAL DIDÁTICA E HIERÁRQUICA
+===============================================================================
+Engenharia Mecatrônica - Orquestração e Integração Modular no Espaço 3D
+===============================================================================
+Montagem rigorosamente alinhada e didática para visualização no OCP CAD Viewer:
+- Subsistema 1: Carenagem Superior Stealth (Tampa Chanfrada c/ Torre FPV)
+- Subsistema 2: Chassi Banheira Inferior (Fechado c/ Glacis e Grelhas)
+- Subsistema 3: Bandeja Interna Eletrônica (PETG anti-vibração)
+- Subsistema 4: Circuitos Eletrônicos Embarcados (L298N, LM2596, ESP32-CAM, 3S)
+- Subsistema 5: Trem de Rodagem Esquerdo (Rodas Raiadas/Côncavas, Esteira, Motor)
+- Subsistema 6: Trem de Rodagem Direito (Rodas Raiadas/Côncavas, Esteira, Motor)
+===============================================================================
+"""
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 from build123d import *
-import math
 import config as cfg
-import medidas as med
 
-from pecas_madeira import chapa_base, paredes, travessas
-from pecas_mecanicas import motor_johnson, catraca_18t, eixos
+# Peças Estruturais Impressas (PETG)
+from pecas_impressas import (
+    chassi_banheira,
+    tampa_superior,
+    roda_livre,
+    roda_motriz,
+    suporte_eletronica,
+)
 
-def montar_chassi() -> Compound:
+# Componentes Mecânicos e Eletroeletrônicos
+from pecas_mecanicas import (
+    motor_jgb37_520,
+    flange_aluminio,
+    esteira_pneu_mtb,
+    conjunto_eixo_rolamento,
+    eletronica,
+)
+
+def montar_subsistemas() -> dict:
     """
-    Realiza a montagem global do Creative Home Tank perfeitamente alinhada.
+    Gera todos os subsistemas do robô com geometria 100% alinhada e
+    hierarquia limpa para a árvore lateral do OCP CAD Viewer.
     """
-    # --- CHAPAS DE MADEIRA ---
-    espessura = cfg.CONFIG["ESPESSURA_MADEIRA"]
-    z_teto = cfg.CONFIG["ALT_PAREDE"]
-    
-    # A base do robô (que na verdade é o teto) vai para o topo!
-    base = chapa_base.criar_chapa_base().moved(Location((0, 0, z_teto)))
-    
-    # As paredes laterais ficam apoiadas no chão (Z=0)
-    parede_conj = paredes.criar_paredes()
-    
-    # As travessas são coladas por baixo do teto (Z = z_teto - altura_delas)
-    z_travessas = z_teto - cfg.CONFIG["ALT_TRAVESSA"]
-    travessas_conj = travessas.criar_travessas().moved(Location((0, 0, z_travessas)))
-    
-    # --- CATRACAS ---
-    catraca_livre = catraca_18t.criar_catraca_com_bucha()
-    catraca_motriz = catraca_18t.criar_catraca_motriz()
-    
-    y_parede_dir = -cfg.CONFIG["LARG_EXTERNA"] / 2
-    y_parede_esq = cfg.CONFIG["LARG_EXTERNA"] / 2
-    
-    catracas_lista = []
-    
-    for i, (x_centro, z_centro_rel) in enumerate(med.FUROS_RODAS):
-        z_centro = z_centro_rel
-        
-        # Se for o furo 0, é a motriz. Se não, é a livre.
-        if i == 0:
-            modelo = catraca_motriz
-        else:
-            modelo = catraca_livre
-            
-        # A catraca livre fica "de costas", com a bucha (em +Z no modelo) voltada para a madeira.
-        # Parede Direita (-Y): Queremos que o +Z da catraca aponte para +Y (Inwards). Rotation(-90,0,0)
-        c_dir = modelo.moved(Rotation(-90, 0, 0))
-        y_pos_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA / 2
-        c_dir = c_dir.moved(Location((x_centro, y_pos_dir, z_centro)))
-        
-        # Parede Esquerda (+Y): Queremos que o +Z da catraca aponte para -Y (Inwards). Rotation(90,0,0)
-        c_esq = modelo.moved(Rotation(90, 0, 0))
-        y_pos_esq = y_parede_esq + med.DIST_CATRACA_PAREDE + med.ESPESSURA_CATRACA / 2
-        c_esq = c_esq.moved(Location((x_centro, y_pos_esq, z_centro)))
-        
-        catracas_lista.extend([c_dir, c_esq])
-        
-    conjunto_catracas = Compound(label="Catracas 18T (x8)", children=catracas_lista)
-    
-    # --- MOTORES JOHNSON ---
-    motor_modelo = motor_johnson.criar_motor_johnson()
-    # O motor fica do lado de dentro.
-    # Lado Direito (-Y): Corpo(-Z) aponta para dentro (+Y). Eixo(+Z) aponta para fora (-Y). -> Rotation(90, 0, 0)
-    motor_dir = motor_modelo.moved(Rotation(90, 0, 0)) 
-    # Lado Esquerdo (+Y): Corpo(-Z) aponta para dentro (-Y). Eixo(+Z) aponta para fora (+Y). -> Rotation(-90, 0, 0)
-    motor_esq = motor_modelo.moved(Rotation(-90, 0, 0))
-    
-    y_int_dir = -cfg.CONFIG["LARG_INTERNA"] / 2
-    y_int_esq = cfg.CONFIG["LARG_INTERNA"] / 2
-    
-    x_motriz = med.FUROS_RODAS[0][0]
-    z_motriz = med.FUROS_RODAS[0][1]
-    
-    m_dir = motor_dir.moved(Location((x_motriz, y_int_dir, z_motriz)))
-    m_esq = motor_esq.moved(Location((x_motriz, y_int_esq, z_motriz)))
-    conjunto_motores = Compound(label="Motores Johnson (x2)", children=[m_esq, m_dir])
-    
-    # --- EIXOS E PORCAS (M8x75mm independentes) ---
-    eixo_modelo = eixos.criar_eixo_m8()
-    porca_modelo = eixos.criar_arruela_e_porca()
-    
-    # O eixo entra de fora para dentro. 
-    # Lado Direito (-Y): Cabeça na catraca, corpo (+Z) entra para +Y. -> Rotation(-90, 0, 0)
-    eixo_dir = eixo_modelo.moved(Rotation(-90, 0, 0))
-    # A porca fica do lado de dentro (-Y) e face (+Z) aponta para +Y -> Rotation(-90, 0, 0)
-    porca_dir = porca_modelo.moved(Rotation(-90, 0, 0))
-    
-    # Lado Esquerdo (+Y): Cabeça na catraca, corpo (+Z) entra para -Y. -> Rotation(90, 0, 0)
-    eixo_esq = eixo_modelo.moved(Rotation(90, 0, 0))
-    # Porca fica do lado de dentro (+Y) e face (+Z) aponta para -Y -> Rotation(90, 0, 0)
-    porca_esq = porca_modelo.moved(Rotation(90, 0, 0))
-    
-    eixos_lista = []
-    # Eixos nas 3 rodas livres (índices 1, 2, 3)
-    for (x_centro, z_centro_rel) in med.FUROS_RODAS[1:]:
-        z_centro = z_centro_rel
-        # O parafuso M8 encosta a cabeça do lado de fora da catraca
-        y_cabeca_dir = y_parede_dir - med.DIST_CATRACA_PAREDE - med.ESPESSURA_CATRACA
-        e_d = eixo_dir.moved(Location((x_centro, y_cabeca_dir, z_centro)))
-        p_d = porca_dir.moved(Location((x_centro, y_int_dir, z_centro)))
-        
-        y_cabeca_esq = y_parede_esq + med.DIST_CATRACA_PAREDE + med.ESPESSURA_CATRACA
-        e_e = eixo_esq.moved(Location((x_centro, y_cabeca_esq, z_centro)))
-        p_e = porca_esq.moved(Location((x_centro, y_int_esq, z_centro)))
-        
-        eixos_lista.extend([e_d, p_d, e_e, p_e])
-        
-    conjunto_eixos = Compound(label="Parafusos M8 e Porcas", children=eixos_lista)
+    alt_chassi = cfg.CONFIG["ALTURA_CHASSI"] # 65.0
+    esp_parede = cfg.CONFIG["ESPESSURA_PAREDE"] # 3.5
 
-    chassi_global = Compound(label="Creative Home Tank", children=[
-        base, 
-        travessas_conj,
-        parede_conj, 
-        conjunto_catracas,
-        conjunto_motores,
-        conjunto_eixos
-    ])
-    
-    return chassi_global
+    # -------------------------------------------------------------
+    # 1. CARENAGEM SUPERIOR STEALTH (TAMPA)
+    # -------------------------------------------------------------
+    z_borda_chassi = alt_chassi / 2.0 # 32.5mm
+    tampa = tampa_superior.criar_tampa_superior().moved(Location((0, 0, z_borda_chassi)))
+
+    # -------------------------------------------------------------
+    # 2. CHASSI BANHEIRA INFERIOR (CASCO FECHADO)
+    # -------------------------------------------------------------
+    chassi = chassi_banheira.criar_chassi()
+
+    # -------------------------------------------------------------
+    # 3. BANDEJA INTERNA DA ELETRÔNICA
+    # -------------------------------------------------------------
+    z_fundo_interno = -alt_chassi / 2.0 + esp_parede + 1.25 # -27.75mm
+    x_centro_tray = -10.0
+    tray = suporte_eletronica.criar_suporte_eletronica().moved(Location((x_centro_tray, 0, z_fundo_interno)))
+
+    # -------------------------------------------------------------
+    # 4. CIRCUITOS ELETRÔNICOS EMBARCADOS (LAYOUT DIDÁTICO SEM COLISÕES)
+    # -------------------------------------------------------------
+    z_topo_standoff = z_fundo_interno + 1.25 + 6.0
+
+    # Ponte H L298N no centro-traseiro da bandeja
+    placa_l298n = eletronica.criar_ponte_h_l298n().moved(Location((x_centro_tray - 5.0, 0, z_topo_standoff + 0.8)))
+    placa_l298n.label = "Ponte H L298N (12V)"
+
+    # Regulador Step-Down LM2596 ao lado da ponte H
+    placa_lm2596 = eletronica.criar_step_down_lm2596().moved(Location((x_centro_tray - 5.0, -42.0, z_topo_standoff + 0.8)))
+    placa_lm2596.label = "Step-Down LM2596 (5V)"
+
+    # Pack 3S 18650 instalado longitudinalmente no berço central entre os motores
+    bateria_3s = eletronica.criar_pack_bateria_3s().moved(Location((x_centro_tray - 75.0, 0, z_fundo_interno + 2.0)))
+    bateria_3s.label = "Pack 3S 18650 (12V)"
+
+    # Módulo ESP32-CAM na seção frontal da bandeja, alinhado à torre da câmera
+    esp32_cam = eletronica.criar_esp32_cam().moved(Location((x_centro_tray + 60.0, 0, z_fundo_interno + 4.0)))
+    esp32_cam.label = "Modulo ESP32-CAM"
+
+    eletronica_conjunto = Compound(
+        label="Eletronica Embarcada",
+        children=[placa_l298n, placa_lm2596, bateria_3s, esp32_cam]
+    )
+
+    # -------------------------------------------------------------
+    # 5 & 6. TREM DE RODAGEM ESQUERDO E DIREITO
+    # -------------------------------------------------------------
+    roda_livre_base = roda_livre.criar_roda_livre()
+    roda_motriz_base = roda_motriz.criar_roda_motriz()
+    centro_m8_base = conjunto_eixo_rolamento.criar_centro_roda_m8()
+    flange_base = flange_aluminio.criar_flange_aluminio()
+    motor_base = motor_jgb37_520.criar_motor_jgb37()
+    esteira_base = esteira_pneu_mtb.criar_esteira_mtb()
+
+    x_motriz = cfg.CONFIG["POS_X_MOTOR"]     # -85.0
+    x_central = cfg.CONFIG["POS_X_CENTRAL"]   # 0.0
+    x_tensora = cfg.CONFIG["POS_X_TENSORA"]   # +85.0
+    z_eixos = cfg.CONFIG["POS_Z_EIXOS"]       # -12.0
+
+    larg_chassi = cfg.CONFIG["LARGURA_CHASSI"]    # 180.0
+    larg_pista = cfg.CONFIG["LARGURA_PISTA_RODA"] # 35.0
+
+    trens_tracao = {}
+
+    for lado in ["ESQUERDO", "DIREITO"]:
+        sinal_y = 1 if lado == "ESQUERDO" else -1
+        esp_boss_motor = 2.0
+        y_parede_int = sinal_y * (larg_chassi / 2.0 - esp_parede - esp_boss_motor)
+        
+        folga_parede = 3.0
+        y_centro_roda = sinal_y * (larg_chassi / 2.0 + folga_parede + larg_pista / 2.0) # ±110.5mm
+
+        rot_roda = Rotation(-90, 0, 0) if lado == "ESQUERDO" else Rotation(90, 0, 0)
+        rot_motor = Rotation(-90, 0, 0) if lado == "ESQUERDO" else Rotation(90, 0, 0)
+
+        # Motorredutor assentado no boss interno da parede
+        m = motor_base.moved(rot_motor).moved(Location((x_motriz, y_parede_int, z_eixos)))
+        m.label = f"Motorredutor JGB37-520 ({lado})"
+
+        # Roda Traseira Motriz com Flange
+        r_m = roda_motriz_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda, z_eixos)))
+        offset_flange = (larg_pista / 2.0 - 2.0) * sinal_y
+        flange = flange_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda + offset_flange, z_eixos)))
+        roda_traseira = Compound(label=f"Roda Traseira Motriz ({lado})", children=[r_m, flange])
+
+        # Roda Central Livre com Centro M8
+        r_c = roda_livre_base.moved(rot_roda).moved(Location((x_central, y_centro_roda, z_eixos)))
+        offset_centro_m8 = (larg_pista / 2.0 - 3.5) * sinal_y
+        c_m8_c = centro_m8_base.moved(rot_roda).moved(Location((x_central, y_centro_roda + offset_centro_m8, z_eixos)))
+        roda_central = Compound(label=f"Roda Central Apoio ({lado})", children=[r_c, c_m8_c])
+
+        # Roda Dianteira Tensora com Centro M8
+        r_t = roda_livre_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda, z_eixos)))
+        c_m8_t = centro_m8_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda + offset_centro_m8, z_eixos)))
+        roda_dianteira = Compound(label=f"Roda Dianteira Tensora ({lado})", children=[r_t, c_m8_t])
+
+        # Esteira de Borracha Oca
+        est = esteira_base.moved(Location((0, y_centro_roda, 0)))
+        est.label = f"Esteira Pneu MTB ({lado})"
+
+        trens_tracao[lado] = Compound(
+            label=f"Trem de Rodagem {lado}",
+            children=[roda_traseira, roda_central, roda_dianteira, est, m]
+        )
+
+    return {
+        "carenagem": tampa,
+        "chassi": chassi,
+        "bandeja": tray,
+        "eletronica": eletronica_conjunto,
+        "tracao_esq": trens_tracao["ESQUERDO"],
+        "tracao_dir": trens_tracao["DIREITO"]
+    }
+
+def montar_ugv() -> Compound:
+    """
+    Retorna o Compound global com a árvore unificada.
+    """
+    sub = montar_subsistemas()
+    return Compound(
+        label="The Iron Vanguard UGV",
+        children=[
+            sub["carenagem"],
+            sub["chassi"],
+            sub["bandeja"],
+            sub["eletronica"],
+            sub["tracao_esq"],
+            sub["tracao_dir"]
+        ]
+    )
+
+if __name__ == "__main__":
+    print("Gerando Montagem Hierárquica do UGV...")
+    ugv = montar_ugv()
+    try:
+        from ocp_vscode import show
+        show(ugv, names=["The Iron Vanguard UGV"])
+        print("Montagem renderizada no OCP CAD Viewer com sucesso!")
+    except Exception as err:
+        print(f"Montagem gerada com sucesso! (OCP CAD Viewer: {err})")
