@@ -16,12 +16,12 @@ CONFIG = {
     
     # --- Trem de Rodagem e Rodas ---
     "DIAM_PISTA_RODA": 68.0,           # Diâmetro externo da pista onde assenta a esteira (mm)
-    "DIAM_ABA_GUIA": 74.0,             # Diâmetro das abas laterais guia anti-descarrilamento (mm)
+    "DIAM_ABA_GUIA": 74.0,             # Diâmetro das abas guia (74mm < 78.8mm da esteira com cravos)
     "LARGURA_PISTA_RODA": 35.0,        # Largura útil da pista (mm)
     "ESPESSURA_ABA_RODA": 3.5,         # Espessura das abas guia da roda (mm)
     "LARGURA_ESTEIRA": 35.0,           # Alias para largura útil da esteira (mm)
     "ESPESSURA_ABA": 3.5,              # Alias para espessura da aba (mm)
-    "ALTURA_ABA_GUIA": 10.0,           # Altura da aba guia (mm)
+    "ALTURA_ABA_GUIA": 3.0,            # Altura da aba guia (3.0mm retém a carcaça do pneu sem tocar no chão)
     "DIAM_PRIMITIVO_MOTRIZ": 68.0,     # Diâmetro da roda motriz (mm)
     "DIAM_POLIA_LIVRE": 68.0,          # Diâmetro da roda livre (mm)
     "ESPESSURA_ESTEIRA": 3.0,          # Espessura da fita de pneu MTB (mm)
@@ -49,6 +49,8 @@ CONFIG = {
     "FOLGA_TRAY_CHASSI": 5.0,          # Folga da bandeja de eletrônica (mm)
     "ESPESSURA_TRAY": 2.5,             # Espessura da chapa da bandeja (mm)
     "ALTURA_STANDOFF": 6.0,            # Altura das torres de circuito (mm)
+    "DIAM_EXT_STANDOFF": 8.0,          # Diâmetro externo reforçado das torres M3 (mm)
+    "RAIO_EXT_STANDOFF": 4.0,          # Raio externo reforçado das torres M3 (mm)
     
     # --- Carenagem Superior (Tampa Chanfrada Militar / Stealth) ---
     "COMPRIMENTO_TAMPA": 284.0,        # Comprimento da tampa superior (mm)

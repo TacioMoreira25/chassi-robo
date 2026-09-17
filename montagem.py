@@ -94,7 +94,8 @@ def montar_subsistemas() -> dict:
     # -------------------------------------------------------------
     # 5 & 6. TREM DE RODAGEM ESQUERDO E DIREITO
     # -------------------------------------------------------------
-    roda_livre_base = roda_livre.criar_roda_livre()
+    roda_livre_tensora_base = roda_livre.criar_roda_livre(com_abas=True)
+    roda_livre_central_base = roda_livre.criar_roda_livre(com_abas=True)
     roda_motriz_base = roda_motriz.criar_roda_motriz()
     centro_m8_base = conjunto_eixo_rolamento.criar_centro_roda_m8()
     flange_base = flange_aluminio.criar_flange_aluminio()
@@ -108,6 +109,7 @@ def montar_subsistemas() -> dict:
 
     larg_chassi = cfg.CONFIG["LARGURA_CHASSI"]    # 180.0
     larg_pista = cfg.CONFIG["LARGURA_PISTA_RODA"] # 35.0
+    esp_aba = cfg.CONFIG["ESPESSURA_ABA_RODA"]   # 3.5
 
     trens_tracao = {}
 
@@ -122,26 +124,26 @@ def montar_subsistemas() -> dict:
         rot_roda = Rotation(-90, 0, 0) if lado == "ESQUERDO" else Rotation(90, 0, 0)
         rot_motor = Rotation(-90, 0, 0) if lado == "ESQUERDO" else Rotation(90, 0, 0)
 
-        # Motorredutor assentado no boss interno da parede
-        m = motor_base.moved(rot_motor).moved(Location((x_motriz, y_parede_int, z_eixos)))
-        m.label = f"Motorredutor JGB37-520 ({lado})"
-
-        # Roda Traseira Motriz com Flange
+        # Roda Traseira Motriz com Flange de Alumínio
         r_m = roda_motriz_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda, z_eixos)))
-        offset_flange = (larg_pista / 2.0 - 2.0) * sinal_y
+        offset_flange = (larg_pista / 2.0 + esp_aba - 2.0) * sinal_y
         flange = flange_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda + offset_flange, z_eixos)))
         roda_traseira = Compound(label=f"Roda Traseira Motriz ({lado})", children=[r_m, flange])
 
-        # Roda Central Livre com Centro M8
-        r_c = roda_livre_base.moved(rot_roda).moved(Location((x_central, y_centro_roda, z_eixos)))
-        offset_centro_m8 = (larg_pista / 2.0 - 3.5) * sinal_y
+        # Roda Central Livre de Apoio (Côncava com Abas e Centro M8)
+        r_c = roda_livre_central_base.moved(rot_roda).moved(Location((x_central, y_centro_roda, z_eixos)))
+        offset_centro_m8 = (larg_pista / 2.0 + esp_aba - 3.5) * sinal_y
         c_m8_c = centro_m8_base.moved(rot_roda).moved(Location((x_central, y_centro_roda + offset_centro_m8, z_eixos)))
         roda_central = Compound(label=f"Roda Central Apoio ({lado})", children=[r_c, c_m8_c])
 
-        # Roda Dianteira Tensora com Centro M8
-        r_t = roda_livre_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda, z_eixos)))
+        # Roda Dianteira Tensora (Côncava com Abas e Centro M8)
+        r_t = roda_livre_tensora_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda, z_eixos)))
         c_m8_t = centro_m8_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda + offset_centro_m8, z_eixos)))
         roda_dianteira = Compound(label=f"Roda Dianteira Tensora ({lado})", children=[r_t, c_m8_t])
+
+        # Motorredutor assentado no boss interno da parede
+        m = motor_base.moved(rot_motor).moved(Location((x_motriz, y_parede_int, z_eixos)))
+        m.label = f"Motorredutor JGB37-520 ({lado})"
 
         # Esteira de Borracha Oca
         est = esteira_base.moved(Location((0, y_centro_roda, 0)))

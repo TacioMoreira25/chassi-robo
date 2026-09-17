@@ -21,49 +21,58 @@ import config as cfg
 
 def criar_roda_motriz() -> Part:
     """
-    Gera a Roda Motriz com raios estruturais e acoplamento ao motor.
+    Gera a Roda Motriz com raios estruturais, abas duplas anti-descarrilamento (12mm) e acoplamento ao motor.
     """
     diam_pista = cfg.CONFIG["DIAM_PISTA_RODA"]
     larg_pista = cfg.CONFIG["LARGURA_PISTA_RODA"]
-    diam_aba = cfg.CONFIG["DIAM_ABA_GUIA"]
-    esp_aba = cfg.CONFIG["ESPESSURA_ABA_RODA"]
-    furo_m3 = cfg.CONFIG["DIAM_FURO_M3"]
+    diam_aba = cfg.CONFIG["DIAM_ABA_GUIA"]       # 92mm (12mm acima da pista)
+    esp_aba = cfg.CONFIG["ESPESSURA_ABA_RODA"]   # 3.5mm
+    furo_m3 = cfg.CONFIG["DIAM_FURO_M3"]         # 3.2mm
     furo_eixo = 6.5
+    larg_total = larg_pista + 2.0 * esp_aba     # 42mm total
 
     with BuildPart() as roda:
-        # 1. Aro cilíndrico externo da pista
+        # 1. Pista cilíndrica central (onde assenta a esteira de 35mm)
         Cylinder(radius=diam_pista / 2.0, height=larg_pista)
 
-        # 2. Aba lateral guia interna (lado chassi)
-        with Locations((0, 0, -larg_pista / 2.0 + esp_aba / 2.0)):
+        # 2. Aba lateral guia interna (lado chassi) - 12mm de altura
+        with Locations((0, 0, -larg_pista / 2.0 - esp_aba / 2.0)):
             Cylinder(radius=diam_aba / 2.0, height=esp_aba)
 
-        # 3. Cavidade frontal rebaixada do aro
-        with Locations((0, 0, 3.0)):
-            Cylinder(radius=(diam_pista - 7.0) / 2.0, height=larg_pista, mode=Mode.SUBTRACT)
+        # 3. Aba lateral guia externa (lado fora) - 12mm de altura
+        with Locations((0, 0, larg_pista / 2.0 + esp_aba / 2.0)):
+            Cylinder(radius=diam_aba / 2.0, height=esp_aba)
 
-        # 4. Cubo central sólido
-        Cylinder(radius=16.0, height=larg_pista)
+        # 4. Alívio côncavo interno do aro
+        with Locations((0, 0, 0)):
+            Cylinder(radius=(diam_pista - 8.0) / 2.0, height=larg_total + 2.0, mode=Mode.SUBTRACT)
 
-        # 5. 5x Raios estruturais vazados conectando o aro ao cubo central
+        # 5. Cubo central sólido
+        Cylinder(radius=16.0, height=larg_total)
+
+        # 6. 5x Raios estruturais vazados conectando o aro ao cubo central
         with PolarLocations(radius=22.5, count=5):
-            Box(17.0, 5.5, larg_pista - 6.0)
+            Box(17.0, 5.5, larg_total)
 
-        # 6. Rebaixo na face externa para embutir o flange de alumínio (Ø22mm x 4mm)
-        with Locations((0, 0, larg_pista / 2.0 - 2.0)):
+        # 7. Rebaixo na face externa para flange de alumínio de 6mm (Ø22mm x 4mm)
+        z_face_externa = larg_pista / 2.0 + esp_aba
+        with Locations((0, 0, z_face_externa - 2.0)):
             Cylinder(radius=22.0 / 2.0, height=4.2, mode=Mode.SUBTRACT)
 
-        # 7. Furo central do eixo do motor Ø6.5mm
-        Cylinder(radius=furo_eixo / 2.0, height=larg_pista + 6.0, mode=Mode.SUBTRACT)
+        # 8. Furo central do eixo do motor Ø6.5mm
+        Cylinder(radius=furo_eixo / 2.0, height=larg_total + 6.0, mode=Mode.SUBTRACT)
 
-        # 8. 4x Furos passantes M3 para parafusar o flange de alumínio (PCD 16mm)
+        # 9. 4x Furos passantes M3 (Ø3.2mm) para parafusar o flange (PCD 16mm)
         with PolarLocations(radius=16.0 / 2.0, count=4):
-            Cylinder(radius=furo_m3 / 2.0, height=larg_pista + 6.0, mode=Mode.SUBTRACT)
+            Cylinder(radius=furo_m3 / 2.0, height=larg_total + 6.0, mode=Mode.SUBTRACT)
 
-        # 9. Chanfros nas arestas externas
-        circulos = roda.edges().filter_by(GeomType.CIRCLE).sort_by(Axis.Z)
-        if len(circulos) >= 2:
-            chamfer(circulos[-1], length=1.5)
+        # 10. Chanfro interno de 45° (2.0mm) nas bordas das abas para guiar o pneu MTB
+        inner_edges = [
+            e for e in roda.edges().filter_by(GeomType.CIRCLE)
+            if abs(e.radius - diam_aba / 2.0) < 0.2 and abs(abs(e.center().Z) - larg_pista / 2.0) < 0.2
+        ]
+        if inner_edges:
+            chamfer(inner_edges, length=2.0)
 
     peca = roda.part
     peca.color = Color(cfg.CORES["RODA_POLIA"])

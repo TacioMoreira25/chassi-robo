@@ -28,7 +28,8 @@ def criar_suporte_eletronica() -> Part:
     larg_tray = 165.0
     esp_tray = cfg.CONFIG["ESPESSURA_TRAY"]
     alt_standoff = cfg.CONFIG["ALTURA_STANDOFF"]
-    furo_m3 = cfg.CONFIG["DIAM_FURO_M3"]
+    raio_ext_standoff = cfg.CONFIG.get("RAIO_EXT_STANDOFF", 4.0) # Ø8.0mm externo
+    furo_m3 = cfg.CONFIG["DIAM_FURO_M3"]                         # Ø3.2mm passante
 
     with BuildPart() as tray:
         # 1. Base plana da bandeja
@@ -38,18 +39,18 @@ def criar_suporte_eletronica() -> Part:
         with Locations((-77.5, 60.0, 0), (-77.5, -60.0, 0)):
             Box(60.0, 50.0, esp_tray + 2.0, mode=Mode.SUBTRACT)
 
-        # 3. Torres de elevação (Standoffs M3) para Driver Ponte H L298N (43x43mm)
+        # 3. Torres de elevação reforçadas (Ø8.0mm ext / Ø3.2mm int) para Ponte H L298N (43x43mm)
         pos_l298n = (-5.0, 0.0, esp_tray / 2.0 + alt_standoff / 2.0)
         with Locations(pos_l298n):
             with GridLocations(x_spacing=43.0, y_spacing=43.0, x_count=2, y_count=2):
-                Cylinder(radius=3.5, height=alt_standoff)
+                Cylinder(radius=raio_ext_standoff, height=alt_standoff)
                 Cylinder(radius=furo_m3 / 2.0, height=alt_standoff * 2, mode=Mode.SUBTRACT)
 
-        # 4. Torres de elevação para o Regulador Step-Down LM2596 (35x20mm)
+        # 4. Torres de elevação reforçadas (Ø8.0mm ext / Ø3.2mm int) para Step-Down LM2596 (35x20mm)
         pos_lm2596 = (-5.0, -42.0, esp_tray / 2.0 + alt_standoff / 2.0)
         with Locations(pos_lm2596):
             with GridLocations(x_spacing=35.0, y_spacing=20.0, x_count=2, y_count=2):
-                Cylinder(radius=3.0, height=alt_standoff)
+                Cylinder(radius=raio_ext_standoff, height=alt_standoff)
                 Cylinder(radius=furo_m3 / 2.0, height=alt_standoff * 2, mode=Mode.SUBTRACT)
 
         # 5. Berço rebaixado e rasgos para cintas do Pack 3S 18650 (entre os motores)
