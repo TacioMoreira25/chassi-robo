@@ -1,6 +1,6 @@
 """
 ===============================================================================
-THE IRON VANGUARD UGV - FLANGE DE ACOPLAMENTO DE ALUMÍNIO (6mm -> M3)
+ROBÔ DE INSPEÇÃO - FLANGE DE ACOPLAMENTO DE ALUMÍNIO (6mm -> M3)
 ===============================================================================
 Componente: Flange metálico usinado em alumínio para transmissão de torque
 Dimensões: Diâmetro externo da base: 22.0mm, Altura da base: 4.0mm

@@ -1,16 +1,16 @@
 """
 ===============================================================================
-THE IRON VANGUARD UGV - MONTAGEM GERAL DIDÁTICA E HIERÁRQUICA
+ROBÔ DE INSPEÇÃO - MONTAGEM GERAL DIDÁTICA E HIERÁRQUICA
 ===============================================================================
 Engenharia Mecatrônica - Orquestração e Integração Modular no Espaço 3D
 ===============================================================================
 Montagem rigorosamente alinhada e didática para visualização no OCP CAD Viewer:
-- Subsistema 1: Carenagem Superior Stealth (Tampa Chanfrada c/ Torre FPV)
-- Subsistema 2: Chassi Banheira Inferior (Fechado c/ Glacis e Grelhas)
-- Subsistema 3: Bandeja Interna Eletrônica (PETG anti-vibração)
+- Subsistema 1: Carenagem Superior Stealth (Suporte Tilt + Cooler 80mm + Painel)
+- Subsistema 2: Chassi Banheira Inferior (Glacis 45°, Grelhas, Aletas e Passa-Cabos)
+- Subsistema 3: Bandeja Interna Eletrônica (PETG c/ Berço Central 3S)
 - Subsistema 4: Circuitos Eletrônicos Embarcados (L298N, LM2596, ESP32-CAM, 3S)
-- Subsistema 5: Trem de Rodagem Esquerdo (Rodas Raiadas/Côncavas, Esteira, Motor)
-- Subsistema 6: Trem de Rodagem Direito (Rodas Raiadas/Côncavas, Esteira, Motor)
+- Subsistema 5: Trem de Rodagem Esquerdo (Polia Motriz 60mm, Livres 50mm, Esteira)
+- Subsistema 6: Trem de Rodagem Direito (Polia Motriz 60mm, Livres 50mm, Esteira)
 ===============================================================================
 """
 
@@ -44,13 +44,15 @@ def montar_subsistemas() -> dict:
     Gera todos os subsistemas do robô com geometria 100% alinhada e
     hierarquia limpa para a árvore lateral do OCP CAD Viewer.
     """
-    alt_chassi = cfg.CONFIG["ALTURA_CHASSI"] # 65.0
-    esp_parede = cfg.CONFIG["ESPESSURA_PAREDE"] # 3.5
+    alt_chassi = cfg.CONFIG["ALTURA_CHASSI"] # 75.0
+    esp_parede = cfg.CONFIG["ESPESSURA_PAREDE"] # 2.5
+    esp_tray = cfg.CONFIG["ESPESSURA_TRAY"] # 2.5
+    alt_standoff = cfg.CONFIG["ALTURA_STANDOFF"] # 5.0
 
     # -------------------------------------------------------------
     # 1. CARENAGEM SUPERIOR STEALTH (TAMPA)
     # -------------------------------------------------------------
-    z_borda_chassi = alt_chassi / 2.0 # 32.5mm
+    z_borda_chassi = alt_chassi / 2.0 # 37.5mm
     tampa = tampa_superior.criar_tampa_superior().moved(Location((0, 0, z_borda_chassi)))
 
     # -------------------------------------------------------------
@@ -61,29 +63,29 @@ def montar_subsistemas() -> dict:
     # -------------------------------------------------------------
     # 3. BANDEJA INTERNA DA ELETRÔNICA
     # -------------------------------------------------------------
-    z_fundo_interno = -alt_chassi / 2.0 + esp_parede + 1.25 # -27.75mm
-    x_centro_tray = -10.0
+    z_fundo_interno = -alt_chassi / 2.0 + esp_parede + esp_tray / 2.0 # -33.75mm
+    x_centro_tray = 0.0
     tray = suporte_eletronica.criar_suporte_eletronica().moved(Location((x_centro_tray, 0, z_fundo_interno)))
 
     # -------------------------------------------------------------
-    # 4. CIRCUITOS ELETRÔNICOS EMBARCADOS (LAYOUT DIDÁTICO SEM COLISÕES)
+    # 4. CIRCUITOS ELETRÔNICOS EMBARCADOS (LAYOUT COM CG CENTRAL BALANCEADO)
     # -------------------------------------------------------------
-    z_topo_standoff = z_fundo_interno + 1.25 + 6.0
+    z_topo_standoff = z_fundo_interno + esp_tray / 2.0 + alt_standoff # -30.0mm
 
-    # Ponte H L298N no centro-traseiro da bandeja
-    placa_l298n = eletronica.criar_ponte_h_l298n().moved(Location((x_centro_tray - 5.0, 0, z_topo_standoff + 0.8)))
+    # Pack 3S 18650 instalado no BERÇO CENTRAL GEOMÉTRICO (0, 0) para equilibrar o CG
+    bateria_3s = eletronica.criar_pack_bateria_3s().moved(Location((0, 0, z_fundo_interno + esp_tray / 2.0 + 9.5)))
+    bateria_3s.label = "Pack 3S 18650 (CG Central)"
+
+    # Ponte H L298N nas torres traseiras entre os motores
+    placa_l298n = eletronica.criar_ponte_h_l298n().moved(Location((-68.0, 0, z_topo_standoff + 0.8)))
     placa_l298n.label = "Ponte H L298N (12V)"
 
-    # Regulador Step-Down LM2596 ao lado da ponte H
-    placa_lm2596 = eletronica.criar_step_down_lm2596().moved(Location((x_centro_tray - 5.0, -42.0, z_topo_standoff + 0.8)))
+    # Regulador Step-Down LM2596 nas torres dianteiras direitas
+    placa_lm2596 = eletronica.criar_step_down_lm2596().moved(Location((48.0, -32.0, z_topo_standoff + 0.8)))
     placa_lm2596.label = "Step-Down LM2596 (5V)"
 
-    # Pack 3S 18650 instalado longitudinalmente no berço central entre os motores
-    bateria_3s = eletronica.criar_pack_bateria_3s().moved(Location((x_centro_tray - 75.0, 0, z_fundo_interno + 2.0)))
-    bateria_3s.label = "Pack 3S 18650 (12V)"
-
-    # Módulo ESP32-CAM na seção frontal da bandeja, alinhado à torre da câmera
-    esp32_cam = eletronica.criar_esp32_cam().moved(Location((x_centro_tray + 60.0, 0, z_fundo_interno + 4.0)))
+    # Módulo ESP32-CAM nas torres dianteiras esquerdas
+    esp32_cam = eletronica.criar_esp32_cam().moved(Location((48.0, 32.0, z_topo_standoff + 0.8)))
     esp32_cam.label = "Modulo ESP32-CAM"
 
     eletronica_conjunto = Compound(
@@ -102,14 +104,16 @@ def montar_subsistemas() -> dict:
     motor_base = motor_jgb37_520.criar_motor_jgb37()
     esteira_base = esteira_pneu_mtb.criar_esteira_mtb()
 
-    x_motriz = cfg.CONFIG["POS_X_MOTOR"]     # -85.0
-    x_central = cfg.CONFIG["POS_X_CENTRAL"]   # 0.0
-    x_tensora = cfg.CONFIG["POS_X_TENSORA"]   # +85.0
-    z_eixos = cfg.CONFIG["POS_Z_EIXOS"]       # -12.0
+    x_motriz = cfg.CONFIG["POS_X_MOTOR"]            # -95.0mm
+    x_central = cfg.CONFIG["POS_X_CENTRAL"]          # 0.0mm
+    x_tensora = cfg.CONFIG["POS_X_TENSORA"]          # +95.0mm
+    z_motriz = cfg.CONFIG.get("POS_Z_MOTOR", -17.5)  # -17.5mm (35mm acima do solo)
+    z_eixos = cfg.CONFIG.get("POS_Z_EIXOS", -22.5)   # -22.5mm (assentadas no solo)
 
-    larg_chassi = cfg.CONFIG["LARGURA_CHASSI"]    # 180.0
-    larg_pista = cfg.CONFIG["LARGURA_PISTA_RODA"] # 35.0
-    esp_aba = cfg.CONFIG["ESPESSURA_ABA_RODA"]   # 3.5
+    larg_chassi = cfg.CONFIG["LARGURA_CHASSI"]       # 160.0mm
+    larg_pista = cfg.CONFIG["LARGURA_PISTA_RODA"]    # 35.0mm
+    esp_aba = cfg.CONFIG.get("ESPESSURA_ABA_RODA", 2.5) # 2.5mm
+    folga_parede = 1.0                              # 1.0mm folga livre da aba à parede
 
     trens_tracao = {}
 
@@ -118,34 +122,33 @@ def montar_subsistemas() -> dict:
         esp_boss_motor = 2.0
         y_parede_int = sinal_y * (larg_chassi / 2.0 - esp_parede - esp_boss_motor)
         
-        folga_parede = 3.0
-        y_centro_roda = sinal_y * (larg_chassi / 2.0 + folga_parede + larg_pista / 2.0) # ±110.5mm
+        # Centro da pista da roda garantindo largura total ~230mm ponta a ponta das esteiras
+        y_centro_roda = sinal_y * 98.0 # ±98.0mm (borda externa da esteira em ±115.5mm -> Largura total = 231mm)
 
         rot_roda = Rotation(-90, 0, 0) if lado == "ESQUERDO" else Rotation(90, 0, 0)
         rot_motor = Rotation(-90, 0, 0) if lado == "ESQUERDO" else Rotation(90, 0, 0)
 
-        # Roda Traseira Motriz com Flange de Alumínio
-        r_m = roda_motriz_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda, z_eixos)))
+        # Roda Traseira Motriz Maciça com Flange de Alumínio embutido no rebaixo
+        r_m = roda_motriz_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda, z_motriz)))
         offset_flange = (larg_pista / 2.0 + esp_aba - 2.0) * sinal_y
-        flange = flange_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda + offset_flange, z_eixos)))
+        flange = flange_base.moved(rot_roda).moved(Location((x_motriz, y_centro_roda + offset_flange, z_motriz)))
         roda_traseira = Compound(label=f"Roda Traseira Motriz ({lado})", children=[r_m, flange])
 
-        # Roda Central Livre de Apoio (Côncava com Abas e Centro M8)
+        # Roda Central Livre de Apoio (Rolamentos e porcas embutidos no cubo)
         r_c = roda_livre_central_base.moved(rot_roda).moved(Location((x_central, y_centro_roda, z_eixos)))
-        offset_centro_m8 = (larg_pista / 2.0 + esp_aba - 3.5) * sinal_y
-        c_m8_c = centro_m8_base.moved(rot_roda).moved(Location((x_central, y_centro_roda + offset_centro_m8, z_eixos)))
+        c_m8_c = centro_m8_base.moved(rot_roda).moved(Location((x_central, y_centro_roda, z_eixos)))
         roda_central = Compound(label=f"Roda Central Apoio ({lado})", children=[r_c, c_m8_c])
 
-        # Roda Dianteira Tensora (Côncava com Abas e Centro M8)
+        # Roda Dianteira Tensora (Rolamentos e porcas embutidos no cubo)
         r_t = roda_livre_tensora_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda, z_eixos)))
-        c_m8_t = centro_m8_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda + offset_centro_m8, z_eixos)))
+        c_m8_t = centro_m8_base.moved(rot_roda).moved(Location((x_tensora, y_centro_roda, z_eixos)))
         roda_dianteira = Compound(label=f"Roda Dianteira Tensora ({lado})", children=[r_t, c_m8_t])
 
         # Motorredutor assentado no boss interno da parede
-        m = motor_base.moved(rot_motor).moved(Location((x_motriz, y_parede_int, z_eixos)))
+        m = motor_base.moved(rot_motor).moved(Location((x_motriz, y_parede_int, z_motriz)))
         m.label = f"Motorredutor JGB37-520 ({lado})"
 
-        # Esteira de Borracha Oca
+        # Esteira de Borracha Oca c/ Cravos 3D perfeitamente nivelada no solo
         est = esteira_base.moved(Location((0, y_centro_roda, 0)))
         est.label = f"Esteira Pneu MTB ({lado})"
 
@@ -163,13 +166,13 @@ def montar_subsistemas() -> dict:
         "tracao_dir": trens_tracao["DIREITO"]
     }
 
-def montar_ugv() -> Compound:
+def montar_robo_inspecao() -> Compound:
     """
-    Retorna o Compound global com a árvore unificada.
+    Retorna o Compound global do Robô de Inspeção com a árvore unificada.
     """
     sub = montar_subsistemas()
     return Compound(
-        label="The Iron Vanguard UGV",
+        label="Robô de Inspeção",
         children=[
             sub["carenagem"],
             sub["chassi"],
@@ -180,12 +183,15 @@ def montar_ugv() -> Compound:
         ]
     )
 
+# Alias retrocompatível
+montar_ugv = montar_robo_inspecao
+
 if __name__ == "__main__":
-    print("Gerando Montagem Hierárquica do UGV...")
-    ugv = montar_ugv()
+    print("Gerando Montagem Hierárquica do Robô de Inspeção...")
+    robo = montar_robo_inspecao()
     try:
         from ocp_vscode import show
-        show(ugv, names=["The Iron Vanguard UGV"])
+        show(robo, names=["Robô de Inspeção"])
         print("Montagem renderizada no OCP CAD Viewer com sucesso!")
     except Exception as err:
         print(f"Montagem gerada com sucesso! (OCP CAD Viewer: {err})")

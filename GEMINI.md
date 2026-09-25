@@ -1,6 +1,6 @@
-# The Iron Vanguard UGV - Parametric CAD Project
+# Robô de Inspeção - Projeto CAD Paramétrico
 
-Este projeto consiste na modelagem CAD paramétrica do UGV (Veículo Terrestre Não Tripulado) "The Iron Vanguard" utilizando a biblioteca **build123d** em Python. A estrutura do robô é composta por casco monobloco e carenagem stealth em PETG, esteiras de borracha de pneu MTB e componentes comerciais integrados via modelos STEP oficiais.
+Este projeto consiste na modelagem CAD paramétrica do **Robô de Inspeção** sobre esteiras de borracha de pneu MTB utilizando a biblioteca **build123d** em Python. A estrutura do robô é composta por casco monobloco ("banheira") e carenagem stealth em PETG, esteiras com cravos 3D e componentes comerciais integrados via modelos STEP e padronizados.
 
 ## Tecnologias e Dependências
 
@@ -12,9 +12,9 @@ Este projeto consiste na modelagem CAD paramétrica do UGV (Veículo Terrestre N
 ## Estrutura do Projeto
 
 - `main.py`: Ponto de entrada principal que inicializa e exibe a montagem dos 6 subsistemas no OCP CAD Viewer.
-- `config.py`: Dimensões globais, parâmetros estruturais e paleta de cores didática de engenharia.
+- `config.py`: Dimensões globais, parâmetros estruturais, tolerâncias FDM e paleta de cores didática de engenharia.
 - `medidas.py`: Parâmetros de furação, variáveis calculadas e tolerâncias de montagem.
-- `montagem.py`: Orquestra a composição espacial e cinemática dos subsistemas (chassi, carenagem, bandeja, eletrônica e trens de rodagem).
+- `montagem.py`: Orquestra a composição espacial e cinemática dos 6 subsistemas (carenagem, chassi, bandeja, eletrônica e trens de rodagem).
 - `pinagem_eletronica.py`: Mapeamento elétrico oficial ESP32-CAM -> Ponte H L298N e especificações de alimentação.
 - `modelos_cad/`: Modelos CAD industriais em formato STEP para os componentes comerciais padronizados:
   - `rolamento_608zz.step`: Rolamento industrial 608-ZZ com pistas e blindagens
@@ -23,16 +23,16 @@ Este projeto consiste na modelagem CAD paramétrica do UGV (Veículo Terrestre N
   - `ponte_h_l298n.step`: Driver de motores de potência L298N completo
   - `step_down_lm2596_hw411.step`: Módulo conversor DC-DC regulador de 5V
 - `pecas_impressas/`: Componentes estruturais destinados à manufatura aditiva (PETG):
-  - `chassi_banheira.py`: Casco inferior monobloco com glacis frontal a 45°, grelhas e bosses de fixação
-  - `tampa_superior.py`: Carenagem stealth chanfrada com torre de câmera FPV frontal integrada
-  - `roda_motriz.py`: Roda de tração raiada de 5 raios com rebaixo para flange de alumínio
-  - `roda_livre.py`: Roda livre côncava (deep dish) com alojamento para rolamentos 608-ZZ
-  - `suporte_eletronica.py`: Bandeja interna com alívios para motores e berço central para bateria 3S
+  - `chassi_banheira.py`: Casco inferior monobloco (240x160x75mm) com glacis frontal a 45°, cantos inferiores arredondados, grelhas e aletas defletoras
+  - `tampa_superior.py`: Carenagem stealth chanfrada com Cooler Fan Rise Mode 80mm, Suporte Articulado Tilt (55x38x25mm) e painel externo
+  - `roda_motriz.py`: Polia motriz maciça traseira de Ø60mm com abas guia altas de 12mm e rebaixo para flange de alumínio
+  - `roda_livre.py`: Polias livres centrais e dianteiras de Ø50mm com abas guia altas de 12mm e cavidade para 2x rolamentos 608-ZZ
+  - `suporte_eletronica.py`: Bandeja interna com berço central geométrico (70x58x12mm) para pack 3S 18650 e alívios
 - `pecas_mecanicas/`: Componentes mecânicos, cinemáticos e circuitos:
-  - `conjunto_eixo_rolamento.py`: Centro de fixação com rolamento 608-ZZ e porca sextavada M8
-  - `flange_aluminio.py`: Acoplamento de torque 6mm em alumínio
+  - `conjunto_eixo_rolamento.py`: Centro de fixação com rolamentos 608-ZZ, arruela funileiro M8 e porca sextavada M8
+  - `flange_aluminio.py`: Acoplamento de torque 6mm em alumínio (22x4mm)
   - `motor_jgb37_520.py`: Motorredutor JGB37-520 integrado
-  - `esteira_pneu_mtb.py`: Cinta contínua oca de borracha com cravos 3D e placa de união
+  - `esteira_pneu_mtb.py`: Cinta contínua oca de borracha com cravos 3D e placa de união em alumínio
   - `eletronica.py`: Conjunto embarcado (L298N, LM2596, ESP32-CAM e bateria 3S 18650)
 - `exportacoes/`: Destinado a arquivos exportados (.STL para fatiamento 3D e .STEP para usinagem).
 
@@ -44,7 +44,7 @@ Este projeto consiste na modelagem CAD paramétrica do UGV (Veículo Terrestre N
 3. No VS Code, ter a extensão **OCP CAD Viewer** instalada e ativa.
 
 ### Visualização
-Para visualizar o chassi completo com os 6 subsistemas:
+Para visualizar o robô completo com os 6 subsistemas:
 ```bash
 python main.py
 ```

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-THE IRON VANGUARD UGV - MAPA DE CONEXÕES ELÉTRICAS E PINAGEM
+ROBÔ DE INSPEÇÃO - MAPA DE CONEXÕES ELÉTRICAS E PINAGEM
 ===============================================================================
 Engenharia Mecatrônica - Sistema de Potência, Controle e Acionamento
 ===============================================================================
@@ -65,7 +65,7 @@ TENSOES_SISTEMA = {
 
 def imprimir_relatorio_eletrico():
     print("=" * 70)
-    print("THE IRON VANGUARD UGV - ARQUITETURA ELÉTRICA E DE CONTROLE")
+    print("ROBÔ DE INSPEÇÃO - ARQUITETURA ELÉTRICA E DE CONTROLE")
     print("=" * 70)
     print(f"Alimentação Primária: Pack 3S 18650 ({TENSOES_SISTEMA['BATERIA_NOMINAL']}V ~ {TENSOES_SISTEMA['BATERIA_MAXIMA']}V)")
     print(f"Regulador Lógico: LM2596 Step-Down -> {TENSOES_SISTEMA['LOGICA_ESP32_VCC']}V estáveis para ESP32-CAM")

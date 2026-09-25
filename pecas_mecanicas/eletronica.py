@@ -1,6 +1,6 @@
 """
 ===============================================================================
-THE IRON VANGUARD UGV - MÓDULOS E CIRCUITOS ELETRÔNICOS
+ROBÔ DE INSPEÇÃO - MÓDULOS E CIRCUITOS ELETRÔNICOS
 ===============================================================================
 Modelagem visual didática dos componentes do subsistema eletrônico:
 1. Driver Ponte H L298N (Módulo de Potência para os Motores 12V)
@@ -117,22 +117,40 @@ def criar_step_down_lm2596():
 def criar_pack_bateria_3s() -> Compound:
     """
     Gera representação CAD do Pack de Baterias 3S 18650 Li-Ion (11.1V ~ 12.6V).
-    Composto por 3 células 18650 dispostas horizontalmente.
+    Dimensões exatas: 70mm (C) x 58mm (L) x 19mm (A).
+    Composto por 3 células 18650 em série envoltas em termo-retrátil industrial amarelo.
     """
+    comp_pack = cfg.CONFIG["COMP_BERCO_BATERIA"] # 70.0
+    larg_pack = cfg.CONFIG["LARG_BERCO_BATERIA"] # 58.0
     r_cel = 18.0 / 2.0
     comp_cel = 65.0
 
     with BuildPart() as celulas:
-        for i, offset_y in enumerate([-18.0, 0.0, 18.0]):
-            with Locations((0, offset_y, r_cel)):
-                # Cilindros orientados ao longo do eixo X
+        # Invólucro termo-retrátil amortecedor
+        Box(comp_pack - 1.0, larg_pack - 1.0, 18.5)
+        # 3 células cilíndricas salientes
+        for offset_y in [-18.5, 0.0, 18.5]:
+            with Locations((0, offset_y, 0)):
                 with Locations(Rotation(0, 90, 0)):
                     Cylinder(radius=r_cel, height=comp_cel)
     
     pack_part = celulas.part
     pack_part.color = Color(cfg.CORES["BATERIA_3S"])
 
-    return Compound(label="Bateria 3S Li-Ion (12V)", children=[pack_part])
+    # Conector de saída XT30/XT60 com cabos de silicone 14AWG
+    with BuildPart() as conector:
+        with Locations((comp_pack / 2.0 + 2.0, 0, 0)):
+            Box(8.0, 12.0, 7.0)
+            with Locations((4.0, 0, 0)):
+                for y_fio in [-3.0, 3.0]:
+                    with Locations((0, y_fio, 0)):
+                        with Locations(Rotation(0, 90, 0)):
+                            Cylinder(radius=1.8, height=12.0)
+    conector_part = conector.part
+    conector_part.color = Color("#E65100")
+    conector_part.label = "Conector Bateria XT60"
+
+    return Compound(label="Bateria 3S Li-Ion 18650 (12V)", children=[pack_part, conector_part])
 
 def criar_esp32_cam() -> Compound:
     """
